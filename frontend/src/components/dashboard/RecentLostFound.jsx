@@ -5,11 +5,20 @@ import { useEffect, useState } from "react";
 export default function RecentLostFound() {
   const { setActiveTab, navigateToDetails } = useNavigation();
   const [recentItems, setRecentItems] = useState([]);
+    const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    const items = lostFoundService.getItems().slice(0, 2);
-    setRecentItems(items);
-  }, []);
+    useEffect(() => {
+        const loadItems = async () => {
+            try {
+                const data = await lostFoundService.getItems();
+                setItems(data.slice(0, 4));
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        loadItems();
+    }, []);
 
   return (
     <div className="section-card">

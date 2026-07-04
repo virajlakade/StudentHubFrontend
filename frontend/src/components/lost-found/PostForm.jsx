@@ -22,12 +22,17 @@ export default function PostForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
+
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: ""
+      }));
     }
   };
 
@@ -43,26 +48,47 @@ export default function PostForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+
     e.preventDefault();
+
     if (!validate()) return;
 
-    // Default image if empty
     let finalImage = formData.image.trim();
+
     if (!finalImage) {
+
       if (formData.status === "lost") {
-        finalImage = "https://images.unsplash.com/photo-1501250961760-a7b3c296a64f?q=80&w=600&auto=format&fit=crop"; // generic query for lost items
+
+        finalImage =
+            "https://images.unsplash.com/photo-1501250961760-a7b3c296a64f?q=80&w=600&auto=format&fit=crop";
+
       } else {
-        finalImage = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop"; // found item
+
+        finalImage =
+            "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop";
+
       }
+
     }
 
-    lostFoundService.addItem({
-      ...formData,
-      image: finalImage
-    });
+    try {
 
-    navigateToList();
+      await lostFoundService.addItem({
+        ...formData,
+        status: formData.status.toUpperCase(),
+        image: finalImage
+      });
+
+      navigateToList();
+
+    } catch (error) {
+
+      console.error(error);
+      alert("Failed to publish the post.");
+
+    }
+
   };
 
   return (

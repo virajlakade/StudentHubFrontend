@@ -10,13 +10,27 @@ export default function LostFoundDetails() {
   const [actionSent, setActionSent] = useState(false);
 
   const profile = profileService.getProfile();
-  const isOwner = item && profile && item.contactEmail && item.contactEmail.toLowerCase().trim() === profile.email.toLowerCase().trim();
+  const isOwner =
+      item &&
+      profile &&
+      item.contactEmail &&
+      profile.email &&
+      item.contactEmail.toLowerCase().trim() ===
+      profile.email.toLowerCase().trim();
 
   useEffect(() => {
-    if (selectedItemId) {
-      const fetchedItem = lostFoundService.getItemById(selectedItemId);
-      setItem(fetchedItem);
-    }
+    const fetchItem = async () => {
+      if (selectedItemId) {
+        try {
+          const fetchedItem = await lostFoundService.getItemById(selectedItemId);
+          setItem(fetchedItem);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    };
+
+    fetchItem();
   }, [selectedItemId]);
 
   const handleAction = () => {
@@ -29,17 +43,17 @@ export default function LostFoundDetails() {
     }, 100);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
-      const success = lostFoundService.deleteItem(item.id);
-      if (success) {
+      try {
+        await lostFoundService.deleteItem(item.id);
         navigateToList();
-      } else {
+      } catch (error) {
+        console.error(error);
         alert("Failed to delete the listing.");
       }
     }
   };
-
   if (!item) {
     return (
       <div className="details-error-page">
@@ -84,7 +98,7 @@ export default function LostFoundDetails() {
         {/* Right Column: Information */}
         <div className="details-info-container">
           <div className="details-badges">
-            <span className={`detail-status-badge ${item.status}`}>
+            <span className={`detail-status-badge ${item.status.toLowerCase()}`}>
               {item.status.toUpperCase()}
             </span>
             <span className="detail-category-badge">{item.category}</span>
@@ -92,7 +106,10 @@ export default function LostFoundDetails() {
 
           <h1 className="details-title">{item.title}</h1>
           <div className="details-meta">
-            <span className="details-time">Posted {item.time}</span>
+            <span className="details-time">
+
+              Posted {new Date(item.createdAt).toLocaleDateString()}
+            </span>
           </div>
 
           {/* Location */}
@@ -133,7 +150,7 @@ export default function LostFoundDetails() {
               <button
                 onClick={handleAction}
                 disabled={actionSent}
-                className={`btn-contact-action ${item.status}`}
+                className={`btn-contact-action ${item.status.toLowerCase()}`}
               >
                 {item.status === "lost" ? "I Found This Item" : "Claim This Item"}
               </button>
