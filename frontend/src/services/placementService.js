@@ -1,138 +1,78 @@
+import axios from "axios";
 import { profileService } from "./profileService";
 
-const STORAGE_KEY = "studenthub_placement_experiences";
-
-const DEFAULT_EXPERIENCES = [
-  {
-    id: "exp-1",
-    companyName: "Google",
-    role: "Software Development Intern",
-    year: "2024",
-    type: "Internship",
-    authorName: "Sneha Patel",
-    overallDifficulty: "Medium",
-    selectionStatus: "Selected",
-    rounds: "Round 1: Online Assessment (2 LeetCode Medium Questions)\nRound 2: Technical Interview 1 (Graphs, DFS/BFS, and Complexity Analysis)\nRound 3: Technical Interview 2 (Dynamic Programming & System Design basics)",
-    experienceText: "The interviewers were extremely friendly and guided me through the thought process. For Google, focus heavily on writing clean, optimal code and explaining time/space complexities clearly during the live coding rounds.",
-    tips: "Practice LeetCode (mostly Graphs and DP). Study recursion trees and master the big-O analysis. Speak your thoughts out loud during the interviews!",
-    createdAt: "2h ago",
-    likes: 12,
-    likedByUser: false
-  },
-  {
-    id: "exp-2",
-    companyName: "Amazon",
-    role: "SDE Full-time",
-    year: "2024",
-    type: "Full-time",
-    authorName: "Rahul Sharma",
-    overallDifficulty: "Hard",
-    selectionStatus: "Selected",
-    rounds: "Round 1: Online Assessment (Coding & Work Style Simulation)\nRound 2: Technical Interview (Trees, HashMaps, and AWS basics)\nRound 3: Bar Raiser Interview (Amazon Leadership Principles & System Design)",
-    experienceText: "Amazon places a massive emphasis on Leadership Principles. Almost 50% of the interview score depends on how well you exhibit customer obsession, ownership, and deep diving. The coding questions were standard LeetCode Medium/Hard.",
-    tips: "Learn AWS services at a high level. Prepare stories for behavioral questions mapping to Amazon's Leadership Principles. Don't skip the mock interviews!",
-    createdAt: "Yesterday",
-    likes: 24,
-    likedByUser: false
-  },
-  {
-    id: "exp-3",
-    companyName: "Microsoft",
-    role: "Software Engineer",
-    year: "2024",
-    type: "Full-time",
-    authorName: "Aman Gupta",
-    overallDifficulty: "Hard",
-    selectionStatus: "Selected",
-    rounds: "Round 1: Online Coding (3 Tasks)\nRound 2: Technical Screen (Linked List, Bit Manipulation)\nRound 3: System Design & Architectural Coding (OOP design)",
-    experienceText: "The system design round was challenging. I was asked to design a rate limiter. Make sure to discuss scale, databases, and trade-offs clearly. The algorithms portion focused on arrays, string formatting, and trees.",
-    tips: "Read 'Designing Data-Intensive Applications'. Be strong in Object-Oriented Design patterns (SOLID principles). Practice writing clean class designs.",
-    createdAt: "3 days ago",
-    likes: 8,
-    likedByUser: false
-  }
-];
-
-const initStorage = () => {
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_EXPERIENCES));
-  }
-};
+const API = "http://localhost:8090/api/placements";
 
 export const placementService = {
-  getExperiences: () => {
-    initStorage();
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch (e) {
-      console.error("Error reading placement experiences", e);
-      return DEFAULT_EXPERIENCES;
-    }
+
+  // ================= GET ALL =================
+
+  getExperiences: async () => {
+    const response = await axios.get(API);
+    return response.data;
   },
 
-  getExperienceById: (id) => {
-    initStorage();
-    const list = placementService.getExperiences();
-    return list.find((item) => item.id === id) || null;
+  // ================= GET BY ID =================
+
+  getExperienceById: async (id) => {
+    const response = await axios.get(`${API}/${id}`);
+    return response.data;
   },
 
-  addExperience: (exp) => {
-    initStorage();
-    const profile = profileService.getProfile();
-    const list = placementService.getExperiences();
-    const newExp = {
-      ...exp,
-      id: `exp-${Date.now()}`,
-      createdAt: "Just now",
-      likes: 0,
-      likedByUser: false,
-      authorName: exp.authorName.trim() || "Anonymous",
-      authorEmail: profile ? profile.email : ""
-    };
+  // ================= ADD =================
 
-    list.unshift(newExp);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  addExperience: async (experience) => {
 
-    profileService.logActivity(`Shared a interview experience at "${newExp.companyName}" for the "${newExp.role}" role.`, "placement");
-    return newExp;
+    const response = await axios.post(API, experience);
+
+    profileService.logActivity(
+        `Shared interview experience at "${response.data.companyName}".`,
+        "placement"
+    );
+
+    return response.data;
   },
 
-  likeExperience: (id) => {
-    initStorage();
-    const list = placementService.getExperiences();
-    const index = list.findIndex((item) => item.id === id);
-    if (index !== -1) {
-      const item = list[index];
-      if (item.likedByUser) {
-        item.likes = Math.max(0, item.likes - 1);
-        item.likedByUser = false;
-      } else {
-        item.likes += 1;
-        item.likedByUser = true;
-      }
-      list[index] = item;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-      return item;
-    }
-    return null;
+  // ================= UPDATE =================
+
+  updateExperience: async (experience) => {
+
+    const response = await axios.put(
+        `${API}/${experience.id}`,
+        experience
+    );
+
+    profileService.logActivity(
+        `Updated interview experience at "${response.data.companyName}".`,
+        "placement"
+    );
+
+    return response.data;
   },
 
-  deleteExperience: (id) => {
-    initStorage();
-    try {
-      const list = placementService.getExperiences();
-      const expToDelete = list.find((item) => item.id === id);
-      const filtered = list.filter((item) => item.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-      if (expToDelete) {
-        profileService.logActivity(`Deleted interview experience at "${expToDelete.companyName}".`, "placement");
-      }
-      return true;
-    } catch (e) {
-      console.error("Error deleting experience", e);
-      return false;
-    }
+  // ================= DELETE =================
+
+  deleteExperience: async (id) => {
+
+    await axios.delete(`${API}/${id}`);
+
+    profileService.logActivity(
+        "Deleted an interview experience.",
+        "placement"
+    );
+
+    return true;
+  },
+
+  // ================= LIKE =================
+
+  likeExperience: async (id) => {
+
+    const response = await axios.put(`${API}/${id}/like`);
+
+    return response.data;
   }
+
 };
 
 export default placementService;

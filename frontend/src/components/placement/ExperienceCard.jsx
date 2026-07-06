@@ -11,7 +11,7 @@ export function ExperienceCard({ experience, onLike, onDelete }) {
     type,
     authorName,
     authorEmail,
-    overallDifficulty,
+    difficulty,
     selectionStatus,
     rounds,
     experienceText,
@@ -41,14 +41,25 @@ export function ExperienceCard({ experience, onLike, onDelete }) {
   };
 
   const getDifficultyClass = () => {
-    switch (overallDifficulty.toLowerCase()) {
-      case "easy": return "diff-easy";
-      case "medium": return "diff-medium";
-      case "hard": return "diff-hard";
-      default: return "diff-medium";
-    }
-  };
 
+    if (!difficulty) return "diff-medium";
+
+    switch (difficulty.toLowerCase()) {
+
+      case "easy":
+        return "diff-easy";
+
+      case "medium":
+        return "diff-medium";
+
+      case "hard":
+        return "diff-hard";
+
+      default:
+        return "diff-medium";
+    }
+
+  };
   const getStatusClass = () => {
     switch (selectionStatus.toLowerCase()) {
       case "selected": return "status-selected";
@@ -71,7 +82,11 @@ export function ExperienceCard({ experience, onLike, onDelete }) {
           </div>
         </div>
         <div className="header-meta-time">
-          <span className="meta-time-badge">{createdAt}</span>
+       <span className="meta-time-badge">
+    {createdAt
+        ? new Date(createdAt).toLocaleDateString()
+        : "Just now"}
+</span>
         </div>
       </div>
 
@@ -79,8 +94,8 @@ export function ExperienceCard({ experience, onLike, onDelete }) {
       <div className="exp-badges-row">
         <span className="exp-badge type-badge">{type}</span>
         <span className={`exp-badge ${getDifficultyClass()}`}>
-          {overallDifficulty} Difficulty
-        </span>
+    {difficulty}
+</span>
         <span className={`exp-badge ${getStatusClass()}`}>
           {selectionStatus}
         </span>

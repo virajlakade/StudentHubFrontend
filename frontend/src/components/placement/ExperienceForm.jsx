@@ -2,191 +2,352 @@ import React, { useState } from "react";
 import "./ExperienceForm.css";
 
 export function ExperienceForm({ onSubmit, onCancel }) {
+
   const [companyName, setCompanyName] = useState("");
   const [role, setRole] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [type, setType] = useState("Internship");
-  const [overallDifficulty, setOverallDifficulty] = useState("Medium");
-  const [selectionStatus, setSelectionStatus] = useState("Selected");
+  const [year, setYear] = useState(new Date().getFullYear());
+
+  const [type, setType] = useState("INTERNSHIP");
+  const [difficulty, setDifficulty] = useState("MEDIUM");
+  const [selectionStatus, setSelectionStatus] = useState("SELECTED");
+
   const [rounds, setRounds] = useState("");
   const [experienceText, setExperienceText] = useState("");
   const [tips, setTips] = useState("");
   const [authorName, setAuthorName] = useState("");
+  const [authorEmail, setAuthorEmail] = useState("");
 
   const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
+
     e.preventDefault();
     setError("");
 
-    if (!companyName.trim() || !role.trim() || !experienceText.trim()) {
-      setError("Please fill in all required fields (Company, Role, and Experience details).");
+    if (
+      !companyName.trim() ||
+      !role.trim() ||
+      !experienceText.trim()
+    ) {
+      setError(
+        "Please fill Company Name, Role and Experience."
+      );
       return;
     }
 
     onSubmit({
       companyName: companyName.trim(),
       role: role.trim(),
-      year: year.trim(),
+      year: Number(year),
       type,
-      overallDifficulty,
+      difficulty,
       selectionStatus,
       rounds: rounds.trim(),
       experienceText: experienceText.trim(),
       tips: tips.trim(),
-      authorName: authorName.trim() || "Anonymous"
+      authorName: authorName.trim() || "Anonymous",
+      authorEmail: authorEmail.trim(),
+      likes: 0,
+      likedByUser: false
     });
+
   };
 
   return (
-    <form onSubmit={handleSubmit} className="experience-form-container glass-card">
-      <h2 className="form-title-text">Share Interview Experience</h2>
+
+    <form
+      onSubmit={handleSubmit}
+      className="experience-form-container glass-card"
+    >
+
+      <h2 className="form-title-text">
+        Share Interview Experience
+      </h2>
+
       <p className="form-subtitle-text">
-        Provide details about your interview loops, questions asked, and helpful hints for future aspirants.
+        Help juniors by sharing your placement journey.
       </p>
 
-      {error && <div className="form-alert-error">{error}</div>}
+      {error && (
+        <div className="form-alert-error">
+          {error}
+        </div>
+      )}
 
-      {/* Field 1 & 2: Company & Role */}
+      {/* Company & Role */}
+
       <div className="form-row-two-columns">
+
         <div className="form-input-group flex-2">
-          <label className="input-field-label">Company Name *</label>
+
+          <label className="input-field-label">
+            Company Name *
+          </label>
+
           <input
             type="text"
-            placeholder="e.g. Google, Amazon, Microsoft"
+            className="form-text-input"
+            placeholder="Google, Amazon..."
             value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            className="form-text-input"
-            required
+            onChange={(e) =>
+              setCompanyName(e.target.value)
+            }
           />
+
         </div>
 
         <div className="form-input-group flex-2">
-          <label className="input-field-label">Job Role *</label>
+
+          <label className="input-field-label">
+            Job Role *
+          </label>
+
           <input
             type="text"
-            placeholder="e.g. Software Development Intern, Analyst"
+            className="form-text-input"
+            placeholder="Software Engineer"
             value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="form-text-input"
-            required
+            onChange={(e) =>
+              setRole(e.target.value)
+            }
           />
+
         </div>
+
       </div>
 
-      {/* Field 3, 4, 5: Year, Type, Difficulty */}
+      {/* Year Type Difficulty */}
+
       <div className="form-row-three-columns">
-        <div className="form-input-group flex-1">
-          <label className="input-field-label">Year of Interview *</label>
+
+        <div className="form-input-group">
+
+          <label className="input-field-label">
+            Interview Year
+          </label>
+
           <input
-            type="text"
+            type="number"
+            className="form-text-input"
             value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="form-text-input"
-            required
+            onChange={(e) =>
+              setYear(e.target.value)
+            }
           />
+
         </div>
 
-        <div className="form-input-group flex-1">
-          <label className="input-field-label">Job Type *</label>
+        <div className="form-input-group">
+
+          <label className="input-field-label">
+            Job Type
+          </label>
+
           <select
+            className="form-select-input"
             value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="form-select-input"
+            onChange={(e) =>
+              setType(e.target.value)
+            }
           >
-            <option value="Internship">Internship</option>
-            <option value="Full-time">Full-time</option>
+            <option value="INTERNSHIP">
+              Internship
+            </option>
+
+            <option value="FULL_TIME">
+              Full Time
+            </option>
+
+            <option value="PPO">
+              PPO
+            </option>
+
           </select>
+
         </div>
 
-        <div className="form-input-group flex-1">
-          <label className="input-field-label">Overall Difficulty *</label>
+        <div className="form-input-group">
+
+          <label className="input-field-label">
+            Difficulty
+          </label>
+
           <select
-            value={overallDifficulty}
-            onChange={(e) => setOverallDifficulty(e.target.value)}
             className="form-select-input"
+            value={difficulty}
+            onChange={(e) =>
+              setDifficulty(e.target.value)
+            }
           >
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
+
+            <option value="EASY">
+              Easy
+            </option>
+
+            <option value="MEDIUM">
+              Medium
+            </option>
+
+            <option value="HARD">
+              Hard
+            </option>
+
           </select>
+
         </div>
+
       </div>
 
-      {/* Field 6 & 7: Selection Status & Author Name */}
+      {/* Status */}
+
       <div className="form-row-two-columns">
-        <div className="form-input-group flex-1">
-          <label className="input-field-label">Selection Status *</label>
+
+        <div className="form-input-group">
+
+          <label className="input-field-label">
+            Result
+          </label>
+
           <select
-            value={selectionStatus}
-            onChange={(e) => setSelectionStatus(e.target.value)}
             className="form-select-input"
+            value={selectionStatus}
+            onChange={(e) =>
+              setSelectionStatus(e.target.value)
+            }
           >
-            <option value="Selected">Selected</option>
-            <option value="Not Selected">Not Selected</option>
-            <option value="Awaiting Results">Awaiting Results</option>
+
+            <option value="SELECTED">
+              Selected
+            </option>
+
+            <option value="REJECTED">
+              Rejected
+            </option>
+
+            <option value="WAITLISTED">
+              Waitlisted
+            </option>
+
           </select>
+
         </div>
 
-        <div className="form-input-group flex-1">
-          <label className="input-field-label">Your Name (Optional)</label>
+        <div className="form-input-group">
+
+          <label className="input-field-label">
+            Your Name
+          </label>
+
           <input
             type="text"
-            placeholder="Defaults to Anonymous"
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
             className="form-text-input"
+            value={authorName}
+            onChange={(e) =>
+              setAuthorName(e.target.value)
+            }
           />
+
         </div>
+
       </div>
 
-      {/* Field 8: Interview Rounds description */}
+      {/* Email */}
+
       <div className="form-input-group">
-        <label className="input-field-label">Interview Rounds & Process</label>
+
+        <label className="input-field-label">
+          Email
+        </label>
+
+        <input
+          type="email"
+          className="form-text-input"
+          value={authorEmail}
+          onChange={(e) =>
+            setAuthorEmail(e.target.value)
+          }
+        />
+
+      </div>
+
+      {/* Rounds */}
+
+      <div className="form-input-group">
+
+        <label className="input-field-label">
+          Interview Rounds
+        </label>
+
         <textarea
-          placeholder="e.g. Round 1: Online Assessment (2 coding tasks)&#10;Round 2: Technical Interview (DFS/BFS graph problems)&#10;Round 3: Behavioral/HR interview..."
-          value={rounds}
-          onChange={(e) => setRounds(e.target.value)}
           rows="4"
           className="form-textarea-input"
+          value={rounds}
+          onChange={(e) =>
+            setRounds(e.target.value)
+          }
         />
+
       </div>
 
-      {/* Field 9: Experience details */}
+      {/* Experience */}
+
       <div className="form-input-group">
-        <label className="input-field-label">Interview Experience & Details *</label>
+
+        <label className="input-field-label">
+          Interview Experience *
+        </label>
+
         <textarea
-          placeholder="Describe your overall experience. What questions were asked? How was the coding environment? Any specific challenges?"
-          value={experienceText}
-          onChange={(e) => setExperienceText(e.target.value)}
           rows="5"
           className="form-textarea-input"
-          required
+          value={experienceText}
+          onChange={(e) =>
+            setExperienceText(e.target.value)
+          }
         />
+
       </div>
 
-      {/* Field 10: Preparation tips */}
+      {/* Tips */}
+
       <div className="form-input-group">
-        <label className="input-field-label">Preparation Tips for Juniors</label>
+
+        <label className="input-field-label">
+          Tips
+        </label>
+
         <textarea
-          placeholder="What resources did you use? (e.g. LeetCode, specific books, AWS guides). What topics should they focus on?"
-          value={tips}
-          onChange={(e) => setTips(e.target.value)}
           rows="3"
           className="form-textarea-input"
+          value={tips}
+          onChange={(e) =>
+            setTips(e.target.value)
+          }
         />
+
       </div>
 
-      {/* Form Buttons */}
       <div className="form-actions-row">
-        <button type="button" onClick={onCancel} className="btn-cancel-form">
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-cancel-form"
+        >
           Cancel
         </button>
-        <button type="submit" className="btn-submit-form">
+
+        <button
+          type="submit"
+          className="btn-submit-form"
+        >
           Publish Experience
         </button>
+
       </div>
+
     </form>
+
   );
 }
 
