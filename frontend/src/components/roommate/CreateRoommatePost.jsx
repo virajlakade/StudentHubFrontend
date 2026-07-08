@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import RoommateInterests from "./RoommateInterests";
 import "./CreateRoommatePost.css";
 
-const GENDERS = ["Male", "Female", "Any"];
-
+const GENDERS = [
+  { label: "Male Roommate", value: "MALE" },
+  { label: "Female Roommate", value: "FEMALE" },
+  { label: "Any Roommate", value: "ANY" }
+];
 export function CreateRoommatePost({ onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: "",
@@ -118,15 +121,15 @@ export function CreateRoommatePost({ onSubmit, onCancel }) {
         <div className="form-group">
           <label htmlFor="gender">Gender Preference *</label>
           <select
-            id="gender"
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
           >
             {GENDERS.map((g) => (
-              <option key={g} value={g}>
-                {g} Roommate
-              </option>
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
             ))}
           </select>
         </div>

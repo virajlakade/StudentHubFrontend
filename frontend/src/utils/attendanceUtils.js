@@ -1,39 +1,52 @@
+// =========================
+// Calculate stats for one subject
+// =========================
+
 export function calculateStats(subjectLogs) {
+
   const total = subjectLogs.length;
 
   const present = subjectLogs.filter(
-      (l) => l.status === "PRESENT" || l.status === "LATE"
+      (log) =>
+          log.status === "PRESENT" ||
+          log.status === "LATE"
   ).length;
 
   const late = subjectLogs.filter(
-      (l) => l.status === "LATE"
+      (log) => log.status === "LATE"
   ).length;
 
   const absent = subjectLogs.filter(
-      (l) => l.status === "ABSENT"
+      (log) => log.status === "ABSENT"
   ).length;
 
   const percentage =
-      total > 0 ? Math.round((present / total) * 100) : 0;
+      total > 0
+          ? Math.round((present / total) * 100)
+          : 0;
 
   return {
     total,
     present,
     late,
     absent,
-    percentage,
+    percentage
   };
 }
 
+// =========================
+// Overall attendance
+// =========================
+
 export function calculateOverallStats(subjects, logs) {
 
-  if (subjects.length === 0) {
+  if (!subjects || subjects.length === 0) {
     return {
       total: 0,
       present: 0,
       late: 0,
       absent: 0,
-      percentage: 0,
+      percentage: 0
     };
   }
 
@@ -67,9 +80,14 @@ export function calculateOverallStats(subjects, logs) {
     present: totalPresent,
     late: totalLate,
     absent: totalAbsent,
-    percentage,
+    percentage
   };
+
 }
+
+// =========================
+// Attendance Status
+// =========================
 
 export function calculateAttendanceStatus(
     percentage,
@@ -85,7 +103,12 @@ export function calculateAttendanceStatus(
   }
 
   return "danger";
+
 }
+
+// =========================
+// Attendance Advice
+// =========================
 
 export function getAttendanceAdvice(
     present,
@@ -98,7 +121,7 @@ export function getAttendanceAdvice(
       status: "safe",
       text: "No classes logged yet.",
       value: 0,
-      type: "none",
+      type: "none"
     };
   }
 
@@ -117,7 +140,7 @@ export function getAttendanceAdvice(
         status: "warning",
         text: "On the margin. You cannot miss the next class.",
         value: 0,
-        type: "miss",
+        type: "miss"
       };
     }
 
@@ -125,24 +148,28 @@ export function getAttendanceAdvice(
       status: "safe",
       text: `You can miss the next ${maxMissed} class${maxMissed > 1 ? "es" : ""} safely.`,
       value: maxMissed,
-      type: "miss",
+      type: "miss"
     };
 
-  } else {
-
-    const needed = Math.ceil(
-        (targetFraction * total - present) /
-        (1 - targetFraction)
-    );
-
-    return {
-      status: "danger",
-      text: `You need to attend the next ${needed} class${needed > 1 ? "es" : ""} to reach ${targetPercentage}%.`,
-      value: needed,
-      type: "attend",
-    };
   }
+
+  const needed = Math.ceil(
+      (targetFraction * total - present) /
+      (1 - targetFraction)
+  );
+
+  return {
+    status: "danger",
+    text: `You need to attend the next ${needed} class${needed > 1 ? "es" : ""} to reach ${targetPercentage}%.`,
+    value: needed,
+    type: "attend"
+  };
+
 }
+
+// =========================
+// Date Formatter
+// =========================
 
 export function formatDate(dateStr) {
 
@@ -150,11 +177,14 @@ export function formatDate(dateStr) {
 
   const date = new Date(dateStr);
 
-  if (isNaN(date.getTime())) return dateStr;
+  if (isNaN(date.getTime())) {
+    return dateStr;
+  }
 
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    year: "numeric"
   });
+
 }

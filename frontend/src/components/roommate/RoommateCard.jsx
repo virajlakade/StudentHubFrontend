@@ -10,13 +10,16 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
   const [connectMessage, setConnectMessage] = useState("");
 
   const currentUser = profileService.getProfile();
-  const isOwnPost = post.userId === "user-current" || post.email === currentUser.email;
+  const isOwnPost =
+      post.userId === currentUser.id ||
+      post.email === currentUser.email;
 
   // Find if there's an existing request for this post sent by the current user
   const existingRequest = requests.find(
-    (req) => req.postId === post.id && req.senderEmail === currentUser.email
+      (req) =>
+          req.postId === post.id &&
+          req.senderEmail === currentUser.email
   );
-
   // Calculate Match Score based on overlapping profile skills / tags
   // Current user's profile has 'skills' (e.g. React, JavaScript, Node.js)
   // Let's compute matching based on skills or let's use a default set of tags
@@ -24,9 +27,11 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
   // In the user's profileData.js we have: skills: ["React", "JavaScript", "CSS Grid", "Node.js", "SQL", "Git"]
   // But to make match score work well, let's map some skills or default interests to room preferences,
   // or define a set of default tags for Anup, e.g. ["Coding", "Late Night", "Gaming"] to compare.
-  const userRoommateTags = ["Coding", "Late Night", "Gaming"]; 
-  const matchScore = calculateMatchScore(userRoommateTags, post.tags);
-
+  const userRoommateTags = ["Coding", "Late Night", "Gaming"];
+  const matchScore = calculateMatchScore(
+      userRoommateTags,
+      post.tags || []
+  );
   const handleSendRequest = (e) => {
     e.preventDefault();
     if (onConnect) {
@@ -42,7 +47,10 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
       <div className="rm-card-header">
         <div className="creator-profile-info">
           <img
-            src={post.avatar}
+              src={
+                  post.avatar ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop"
+              }
             alt={post.name}
             className="creator-avatar"
             onError={(e) => {
@@ -52,8 +60,7 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
           <div className="creator-details">
             <h3 className="creator-name">{post.name}</h3>
             <span className="creator-subtext">
-              {post.degree} • {post.year.split(" (")[0]}
-            </span>
+{post.degree || "Student"} • {post.year || ""}            </span>
           </div>
         </div>
         
@@ -82,8 +89,7 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
             {post.location}
           </span>
           <span className="post-badge rent-badge">
-            {post.rent}
-          </span>
+              ₹{post.rent}          </span>
           <span className="post-badge gender-badge">
             Preference: {post.gender}
           </span>
@@ -136,7 +142,9 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
 
       {/* Footer Controls */}
       <div className="rm-card-footer">
-        <span className="post-timestamp">{post.time}</span>
+        {post.createdAt
+            ? new Date(post.createdAt).toLocaleDateString()
+            : "Just now"}
         
         <div className="footer-actions">
           {isOwnPost ? (
@@ -163,8 +171,8 @@ export function RoommateCard({ post, requests = [], onConnect, onDelete }) {
             </div>
           ) : existingRequest ? (
             <span className={`request-status-badge status-${existingRequest.status.toLowerCase()}`}>
-              {existingRequest.status === "Pending" && "Request Sent"}
-              {existingRequest.status === "Accepted" && "Connected"}
+              {existingRequest.status === "PENDING" && "Request Sent"}
+              {existingRequest.status === "ACCEPTED" && "Connected"}
               {existingRequest.status === "Declined" && "Declined"}
             </span>
           ) : (
