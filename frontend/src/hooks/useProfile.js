@@ -2,42 +2,97 @@ import { useState, useEffect, useCallback } from "react";
 import { profileService } from "../services/profileService";
 
 export function useProfile() {
+
   const [profile, setProfile] = useState(null);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = useCallback(() => {
+  const refreshProfile = useCallback(async () => {
+
     setLoading(true);
-    const data = profileService.getProfile();
-    const act = profileService.getActivityTimeline();
-    setProfile(data);
-    setActivities(act);
-    setLoading(false);
+
+    try {
+
+      const data = profileService.getProfile();
+      const act = profileService.getActivityTimeline();
+
+      setProfile(data);
+      setActivities(act);
+
+    } catch (error) {
+
+      console.error("Error loading profile:", error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
   }, []);
 
   useEffect(() => {
+
     refreshProfile();
+
   }, [refreshProfile]);
 
-  const updateProfile = useCallback((updatedData) => {
-    const res = profileService.updateProfile(updatedData);
-    setProfile(res);
-    // Refresh activities since updateProfile logs a new activity
-    const act = profileService.getActivityTimeline();
-    setActivities(act);
-    
-    // Also dispatch a custom event to notify Navbar and other components of profile updates!
-    window.dispatchEvent(new Event("profile-updated"));
-    
-    return res;
+  const updateProfile = useCallback(async (updatedData) => {
+
+    try {
+
+      const res = profileService.updateProfile(updatedData);
+
+      setProfile(res);
+
+      const act = profileService.getActivityTimeline();
+      setActivities(act);
+
+      window.dispatchEvent(new Event("profile-updated"));
+
+      return res;
+
+    } catch (error) {
+
+      console.error("Error updating profile:", error);
+      return null;
+
+    }
+
   }, []);
 
-  const getMyPosts = useCallback(() => {
-    return {
-      confessions: profileService.getMyConfessions(),
-      lostFound: profileService.getMyLostFoundPosts(),
-      roommate: profileService.getMyRoommatePosts()
-    };
+  const getMyPosts = useCallback(async () => {
+
+    try {
+
+      const [
+        confessions,
+        lostFound,
+        roommate
+      ] = await Promise.all([
+        profileService.getMyConfessions(),
+        profileService.getMyLostFoundPosts(),
+        profileService.getMyRoommatePosts()
+      ]);
+
+      return {
+        confessions: Array.isArray(confessions) ? confessions : [],
+        lostFound: Array.isArray(lostFound) ? lostFound : [],
+        roommate: Array.isArray(roommate) ? roommate : []
+      };
+
+    } catch (error) {
+
+      console.error("Error loading user posts:", error);
+
+      return {
+        confessions: [],
+        lostFound: [],
+        roommate: []
+      };
+
+    }
+
   }, []);
 
   return {
@@ -48,5 +103,7 @@ export function useProfile() {
     updateProfile,
     getMyPosts
   };
+
 }
+
 export default useProfile;

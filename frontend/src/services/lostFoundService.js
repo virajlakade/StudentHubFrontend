@@ -15,8 +15,13 @@ export const lostFoundService = {
   // ---------------- GET BY ID ----------------
 
   getItemById: async (id) => {
-    const response = await axios.get(`${API}/${id}`);
-    return response.data;
+    try {
+      const response = await axios.get(`${API}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching item:", error);
+      return null;
+    }
   },
 
   // ---------------- ADD ----------------

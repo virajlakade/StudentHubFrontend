@@ -9,117 +9,228 @@ const ACTIVITIES_KEY = "studenthub_activities";
 const MY_CONFESSIONS_IDS_KEY = "studenthub_my_confession_ids";
 
 const DEFAULT_ACTIVITIES = [
-  { id: "act-1", text: "Joined StudentHub portal.", time: "5 days ago", type: "system" },
-  { id: "act-2", text: "Verified institutional email address.", time: "4 days ago", type: "system" },
-  { id: "act-3", text: "Updated skills tags in profile.", time: "3 days ago", type: "profile" }
+  {
+    id: "act-1",
+    text: "Joined StudentHub portal.",
+    time: "5 days ago",
+    type: "system"
+  },
+  {
+    id: "act-2",
+    text: "Verified institutional email address.",
+    time: "4 days ago",
+    type: "system"
+  },
+  {
+    id: "act-3",
+    text: "Updated skills tags in profile.",
+    time: "3 days ago",
+    type: "profile"
+  }
 ];
 
 const initStorage = () => {
   if (!localStorage.getItem(PROFILE_KEY)) {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(INITIAL_PROFILE));
   }
+
   if (!localStorage.getItem(ACTIVITIES_KEY)) {
-    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(DEFAULT_ACTIVITIES));
+    localStorage.setItem(
+        ACTIVITIES_KEY,
+        JSON.stringify(DEFAULT_ACTIVITIES)
+    );
   }
+
   if (!localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) {
-    localStorage.setItem(MY_CONFESSIONS_IDS_KEY, JSON.stringify(["c-1"])); // default first confession is theirs
+    localStorage.setItem(
+        MY_CONFESSIONS_IDS_KEY,
+        JSON.stringify([])
+    );
   }
 };
 
 export const profileService = {
-  getProfile: () => {
+
+  getProfile() {
+
     initStorage();
+
     try {
+
       const authUser = authService.getCurrentUser();
+
       if (authUser) return authUser;
+
       return JSON.parse(localStorage.getItem(PROFILE_KEY)) || INITIAL_PROFILE;
+
     } catch (e) {
-      console.error("Error reading profile", e);
+
+      console.error(e);
       return INITIAL_PROFILE;
+
     }
+
   },
 
-  updateProfile: (updatedProfile) => {
+  updateProfile(updatedProfile) {
+
     initStorage();
+
     authService.updateSessionProfile(updatedProfile);
-    profileService.logActivity("Updated profile details.", "profile");
+
+    profileService.logActivity(
+        "Updated profile details.",
+        "profile"
+    );
+
     return updatedProfile;
+
   },
 
-  // Track confessions created by this user browser
-  trackMyConfession: (confessionId) => {
+  trackMyConfession(confessionId) {
+
     initStorage();
-    try {
-      const ids = JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
-      if (!ids.includes(confessionId)) {
-        ids.unshift(confessionId);
-        localStorage.setItem(MY_CONFESSIONS_IDS_KEY, JSON.stringify(ids));
-      }
-    } catch (e) {
-      console.error("Error tracking confession ID", e);
+
+    const ids =
+        JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
+
+    if (!ids.includes(confessionId)) {
+
+      ids.unshift(confessionId);
+
+      localStorage.setItem(
+          MY_CONFESSIONS_IDS_KEY,
+          JSON.stringify(ids)
+      );
+
     }
+
   },
 
-  getMyConfessions: () => {
-    initStorage();
+  async getMyConfessions() {
+
     try {
-      const myIds = JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
-      const allConfessions = confessionService.getConfessions();
-      return allConfessions.filter((c) => myIds.includes(c.id));
+
+      const ids =
+          JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
+
+      const confessions =
+          await confessionService.getConfessions();
+
+      return (Array.isArray(confessions) ? confessions : []).filter(
+          confession => ids.includes(confession.id)
+      );
+
     } catch (e) {
+
       console.error("Error reading my confessions", e);
       return [];
+
     }
+
   },
 
-  getMyLostFoundPosts: () => {
-    const profile = profileService.getProfile();
-    const allLF = lostFoundService.getItems();
-    // Filter where the email matches the profile email
-    return allLF.filter(
-      (item) =>
-        item.contactEmail &&
-        item.contactEmail.toLowerCase().trim() === profile.email.toLowerCase().trim()
-    );
-  },
+  async getMyLostFoundPosts() {
 
-  getMyRoommatePosts: () => {
-    const profile = profileService.getProfile();
-    const allRoommates = roommateService.getPosts();
-    return allRoommates.filter(
-      (post) =>
-        post.email &&
-        post.email.toLowerCase().trim() === profile.email.toLowerCase().trim()
-    );
-  },
-
-  getActivityTimeline: () => {
-    initStorage();
     try {
-      return JSON.parse(localStorage.getItem(ACTIVITIES_KEY));
+
+      const profile = profileService.getProfile();
+
+      const items =
+          await lostFoundService.getItems();
+
+      return (Array.isArray(items) ? items : []).filter(item =>
+          item.contactEmail &&
+          profile.email &&
+          item.contactEmail.toLowerCase().trim() ===
+          profile.email.toLowerCase().trim()
+      );
+
     } catch (e) {
-      console.error("Error reading activity timeline", e);
-      return DEFAULT_ACTIVITIES;
+
+      console.error("Error reading LostFound", e);
+      return [];
+
     }
+
   },
 
-  logActivity: (text, type = "general") => {
-    initStorage();
+  async getMyRoommatePosts() {
+
     try {
-      const list = JSON.parse(localStorage.getItem(ACTIVITIES_KEY)) || [];
-      const newLog = {
+
+      const profile = profileService.getProfile();
+
+      const posts =
+          await roommateService.getPosts();
+
+      return (Array.isArray(posts) ? posts : []).filter(post =>
+          post.contactEmail &&
+          profile.email &&
+          post.contactEmail.toLowerCase().trim() ===
+          profile.email.toLowerCase().trim()
+      );
+
+    } catch (e) {
+
+      console.error("Error reading roommate posts", e);
+      return [];
+
+    }
+
+  },
+
+  getActivityTimeline() {
+
+    initStorage();
+
+    try {
+
+      return JSON.parse(localStorage.getItem(ACTIVITIES_KEY)) || [];
+
+    } catch (e) {
+
+      console.error(e);
+      return DEFAULT_ACTIVITIES;
+
+    }
+
+  },
+
+  logActivity(text, type = "general") {
+
+    initStorage();
+
+    try {
+
+      const list =
+          JSON.parse(localStorage.getItem(ACTIVITIES_KEY)) || [];
+
+      const activity = {
         id: `act-${Date.now()}`,
         text,
         time: "Just now",
         type
       };
-      list.unshift(newLog);
-      localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(list));
-      return newLog;
+
+      list.unshift(activity);
+
+      localStorage.setItem(
+          ACTIVITIES_KEY,
+          JSON.stringify(list)
+      );
+
+      return activity;
+
     } catch (e) {
-      console.error("Error logging activity", e);
+
+      console.error(e);
       return null;
+
     }
+
   }
+
 };
+
 export default profileService;

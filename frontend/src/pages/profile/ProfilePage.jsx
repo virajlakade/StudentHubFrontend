@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useProfile } from "../../hooks/useProfile";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import ProfileCard from "../../components/profile/ProfileCard";
@@ -6,41 +7,83 @@ import ProfileStats from "../../components/profile/ProfileStats";
 import "./ProfilePage.css";
 
 export default function ProfilePage() {
+
   const { profile, loading, getMyPosts } = useProfile();
 
-  if (loading) {
+  const [posts, setPosts] = useState({
+    confessions: [],
+    lostFound: [],
+    roommate: []
+  });
+
+  const [postsLoading, setPostsLoading] = useState(true);
+
+  useEffect(() => {
+
+    const loadPosts = async () => {
+
+      try {
+
+        const data = await getMyPosts();
+
+        setPosts({
+          confessions: data.confessions || [],
+          lostFound: data.lostFound || [],
+          roommate: data.roommate || []
+        });
+
+      } catch (err) {
+
+        console.error("Error loading posts:", err);
+
+      } finally {
+
+        setPostsLoading(false);
+
+      }
+
+    };
+
+    loadPosts();
+
+  }, [getMyPosts]);
+
+  if (loading || postsLoading) {
+
     return (
-      <div className="profile-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading Profile...</p>
-      </div>
+        <div className="profile-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading Profile...</p>
+        </div>
     );
+
   }
 
-  const posts = getMyPosts();
   const stats = {
-    lostFoundCount: posts.lostFound ? posts.lostFound.length : 0,
-    confessionsCount: posts.confessions ? posts.confessions.length : 0,
-    roommatesCount: posts.roommate ? posts.roommate.length : 0,
+    lostFoundCount: posts.lostFound.length,
+    confessionsCount: posts.confessions.length,
+    roommatesCount: posts.roommate.length
   };
 
   return (
-    <div className="profile-page-container">
-      <ProfileHeader activeSubtab="overview" />
-      
-      <div className="profile-grid">
-        {/* Left Column - User Identity */}
-        <div className="profile-grid-column left">
-          <ProfileCard profile={profile} />
+      <div className="profile-page-container">
+
+        <ProfileHeader activeSubtab="overview" />
+
+        <div className="profile-grid">
+
+          <div className="profile-grid-column left">
+            <ProfileCard profile={profile} />
+          </div>
+
+          <div className="profile-grid-column right">
+            <ProfileStats stats={stats} />
+            <ProfileInfo profile={profile} />
+          </div>
+
         </div>
 
-        {/* Right Column - Stats & Institutional Info */}
-        <div className="profile-grid-column right">
-          <ProfileStats stats={stats} />
-          <ProfileInfo profile={profile} />
-        </div>
       </div>
-    </div>
   );
-}
 
+}

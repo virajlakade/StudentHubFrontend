@@ -8,26 +8,35 @@ export const confessionService = {
   async getConfessions() {
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/confessions`
-      );
+      const response = await fetch(`${BASE_URL}/confessions`);
 
       if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
+        throw new Error(`HTTP Error: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      console.log("Confessions Response:", data);
+      console.log("Is Array?", Array.isArray(data));
+
+      // If backend returns an array
+      if (Array.isArray(data)) {
+        return data;
+      }
+
+      // If backend returns a Spring Page object
+      if (Array.isArray(data.content)) {
+        return data.content;
+      }
+
+      // Otherwise return empty array
+      return [];
 
     } catch (error) {
 
-      console.error(
-          "Error fetching confessions:",
-          error
-      );
-
+      console.error("Error fetching confessions:", error);
       return [];
+
     }
   },
 
