@@ -1,6 +1,8 @@
 import { useNavigation } from "../../context/NavigationContext";
 import "./LostFoundCard.css";
 
+const BASE_URL = "http://localhost:8090";
+
 export default function LostFoundCard({ item }) {
   const { navigateToDetails } = useNavigation();
 
@@ -11,6 +13,10 @@ export default function LostFoundCard({ item }) {
         : text;
   };
 
+  const imageUrl = item.image
+      ? `${BASE_URL}${item.image}`
+      : "https://images.unsplash.com/photo-1534224039826-c7a0dea0e66a?q=80&w=600&auto=format&fit=crop";
+
   return (
       <div
           className="lost-found-card"
@@ -19,10 +25,7 @@ export default function LostFoundCard({ item }) {
         {/* Image */}
         <div className="card-image-wrapper">
           <img
-              src={
-                  item.image ||
-                  "https://images.unsplash.com/photo-1534224039826-c7a0dea0e66a?q=80&w=600&auto=format&fit=crop"
-              }
+              src={imageUrl}
               alt={item.title}
               className="card-image"
               onError={(e) => {
@@ -36,13 +39,10 @@ export default function LostFoundCard({ item }) {
         </span>
         </div>
 
-        {/* Card Content */}
+        {/* Content */}
         <div className="card-content">
-
           <div className="card-header-row">
-            <h3 className="card-title">
-              {item.title}
-            </h3>
+            <h3 className="card-title">{item.title}</h3>
 
             <span className="card-time">
             {item.createdAt
@@ -63,7 +63,7 @@ export default function LostFoundCard({ item }) {
                 strokeLinejoin="round"
                 className="location-pin-icon"
             >
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <path d="M21 10c0 7-9 13-9 13-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
 
@@ -77,7 +77,13 @@ export default function LostFoundCard({ item }) {
           </p>
 
           <div className="card-action-btn-container">
-            <button className="card-action-btn">
+            <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateToDetails(item.id);
+                }}
+            >
               View Details
 
               <svg
@@ -96,7 +102,6 @@ export default function LostFoundCard({ item }) {
               </svg>
             </button>
           </div>
-
         </div>
       </div>
   );

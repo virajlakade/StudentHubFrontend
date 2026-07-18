@@ -15,13 +15,8 @@ export const lostFoundService = {
   // ================= GET BY ID =================
 
   getItemById: async (id) => {
-    try {
-      const response = await axios.get(`${API}/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching item:", error);
-      return null;
-    }
+    const response = await axios.get(`${API}/${id}`);
+    return response.data;
   },
 
   // ================= ADD =================
@@ -44,24 +39,26 @@ export const lostFoundService = {
 
     formData.append("contactName", profile.fullName);
     formData.append("contactEmail", profile.email);
-
     formData.append("userId", profile.id);
 
     if (item.image) {
       formData.append("image", item.image);
     }
 
-    const response = await axios.post(API, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
+    const response = await axios.post(API, formData);
 
     profileService.logActivity(
         `Reported "${response.data.title}".`,
         "lost-found"
     );
 
+    return response.data;
+  },
+
+  // ================= CLAIM =================
+
+  claimItem: async (id) => {
+    const response = await axios.post(`${API}/claim/${id}`);
     return response.data;
   },
 
