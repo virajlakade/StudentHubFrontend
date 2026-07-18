@@ -1,217 +1,171 @@
+import axios from "axios";
 import { profileService } from "./profileService";
 
-const BASE_URL = "http://localhost:8090/api";
+const API = "http://localhost:8090/api";
 
 export const confessionService = {
 
-  // Get all confessions
+  // ================= GET ALL =================
+
   async getConfessions() {
+
     try {
 
-      const response = await fetch(`${BASE_URL}/confessions`);
+      const response = await axios.get(`${API}/confessions`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
+      console.log("Confessions Response:", response.data);
 
-      const data = await response.json();
-
-      console.log("Confessions Response:", data);
-      console.log("Is Array?", Array.isArray(data));
-
-      // If backend returns an array
-      if (Array.isArray(data)) {
-        return data;
-      }
-
-      // If backend returns a Spring Page object
-      if (Array.isArray(data.content)) {
-        return data.content;
-      }
-
-      // Otherwise return empty array
-      return [];
+      return Array.isArray(response.data)
+          ? response.data
+          : response.data.content || [];
 
     } catch (error) {
 
       console.error("Error fetching confessions:", error);
+
       return [];
 
     }
+
   },
 
-  // Get confession by ID
+  // ================= GET BY ID =================
+
   async getConfessionById(id) {
+
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/confessions/${id}`
+      const response = await axios.get(
+          `${API}/confessions/${id}`
       );
 
-      if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
-      }
-
-      return await response.json();
+      return response.data;
 
     } catch (error) {
 
-      console.error(
-          "Error fetching confession:",
-          error
-      );
+      console.error(error);
 
       return null;
+
     }
+
   },
 
-  // Create confession
+  // ================= CREATE =================
+
   async addConfession(text, category) {
+
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/confessions`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              title: category,
-              message: text,
-              category: category,
-              likes: 0
-            })
-          }
+      const profile = await profileService.getProfile();
+
+      const payload = {
+        title: category,
+        message: text,
+        category,
+        likes: 0,
+
+        userId: profile?.id
+      };
+
+      console.log("Confession Payload:", payload);
+
+      const response = await axios.post(
+          `${API}/confessions`,
+          payload
       );
 
-      if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
-      }
-
-      const savedConfession =
-          await response.json();
-
       profileService.trackMyConfession(
-          savedConfession.id
+          response.data.id
       );
 
       profileService.logActivity(
-          `Posted an anonymous confession under "${category}".`,
+          `Posted confession in "${category}".`,
           "confession"
       );
 
-      return savedConfession;
+      return response.data;
 
     } catch (error) {
 
-      console.error(
-          "Error creating confession:",
-          error
-      );
+      console.error(error);
 
       return null;
+
     }
+
   },
 
-  // Like confession
+  // ================= LIKE =================
+
   async likeConfession(id) {
+
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/confessions/${id}/like`,
-          {
-            method: "PUT"
-          }
+      const response = await axios.put(
+          `${API}/confessions/${id}/like`
       );
 
-      if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
-      }
-
-      return await response.json();
+      return response.data;
 
     } catch (error) {
 
-      console.error(
-          "Error liking confession:",
-          error
-      );
+      console.error(error);
 
       return null;
+
     }
+
   },
 
-  // Load comments from database
+  // ================= COMMENTS =================
+
   async getComments(confessionId) {
+
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/comments/${confessionId}`
+      const response = await axios.get(
+          `${API}/comments/${confessionId}`
       );
 
-      if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
-      }
-
-      return await response.json();
+      return response.data;
 
     } catch (error) {
 
-      console.error(
-          "Error loading comments:",
-          error
-      );
+      console.error(error);
 
       return [];
+
     }
+
   },
 
-  // Save comment in database
-  async addComment(
-      confessionId,
-      commentText
-  ) {
+  async addComment(confessionId, commentText) {
+
     try {
 
-      const response = await fetch(
-          `${BASE_URL}/comments/${confessionId}`,
+      const response = await axios.post(
+          `${API}/comments/${confessionId}`,
           {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              commentText: commentText
-            })
+            commentText
           }
       );
 
-      if (!response.ok) {
-        throw new Error(
-            `HTTP Error: ${response.status}`
-        );
-      }
+      profileService.logActivity(
+          "Added a confession comment.",
+          "confession"
+      );
 
-      return await response.json();
+      return response.data;
 
     } catch (error) {
 
-      console.error(
-          "Error saving comment:",
-          error
-      );
+      console.error(error);
 
       return null;
+
     }
+
   }
 
 };

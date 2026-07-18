@@ -2,105 +2,109 @@ import React from "react";
 import { profileService } from "../../services/profileService";
 import "./RoommateRequestCard.css";
 
-export function RoommateRequestCard({ request, onStatusChange }) {
-  const currentUser = profileService.getProfile();
-  const isIncoming = request.receiverEmail === currentUser.email;
-  
+export default function RoommateRequestCard({ request, onStatusChange }) {
+  if (!request) return null;
+
+  const profile = profileService.getProfile() || {};
+
+  const isIncoming =
+      request.receiver?.email === profile.email;
+
+  const status = request.status || "PENDING";
+
+  const displayUser = isIncoming
+      ? request.sender
+      : request.receiver;
+
   const handleAccept = () => {
-    if (onStatusChange) {
-      onStatusChange(request.id, "Accepted");
-    }
+    onStatusChange?.(request.id, "ACCEPTED");
   };
 
   const handleDecline = () => {
-    if (onStatusChange) {
-      onStatusChange(request.id, "Declined");
-    }
+    onStatusChange?.(request.id, "DECLINED");
   };
 
-  const isPending = request.status === "Pending";
-  const isAccepted = request.status === "Accepted";
-  const isDeclined = request.status === "Declined";
-
-  // Determine who to show on the card (the other person)
-  const displayAvatar = isIncoming ? request.senderAvatar : null;
-  const displayName = isIncoming ? request.senderName : request.receiverName;
-  const displayRole = isIncoming ? "Sent you a request" : "You requested to connect";
-
   return (
-    <div className={`roommate-request-card glass-card status-${request.status.toLowerCase()}`}>
-      <div className="req-card-top">
-        <div className="req-user-info">
-          {displayAvatar ? (
-            <img
-              src={displayAvatar}
-              alt={displayName}
-              className="req-avatar"
-              onError={(e) => {
-                e.target.src = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop";
-              }}
-            />
-          ) : (
-            <div className="req-avatar-placeholder">
-              {displayName.charAt(0)}
-            </div>
-          )}
-          <div className="req-details">
-            <h4 className="req-name">{displayName}</h4>
-            <span className="req-role-label">{displayRole}</span>
-          </div>
-        </div>
+      <div
+          className={`roommate-request-card glass-card status-${status.toLowerCase()}`}
+      >
+        <div className="req-card-top">
 
-        <span className={`req-status-tag tag-${request.status.toLowerCase()}`}>
-          {request.status}
+          <div className="req-user-info">
+
+            {displayUser?.profileImage ? (
+                <img
+                    src={displayUser.profileImage}
+                    alt={displayUser.fullName}
+                    className="req-avatar"
+                />
+            ) : (
+                <div className="req-avatar-placeholder">
+                  {(displayUser?.fullName || "?")[0]}
+                </div>
+            )}
+
+            <div className="req-details">
+              <h4>{displayUser?.fullName}</h4>
+
+              <span>
+              {isIncoming
+                  ? "Sent you a request"
+                  : "You sent this request"}
+            </span>
+            </div>
+          </div>
+
+          <span className={`req-status-tag tag-${status.toLowerCase()}`}>
+          {status}
         </span>
-      </div>
-
-      <div className="req-card-body">
-        <div className="req-post-reference">
-          <span className="reference-label">Listing:</span>
-          <span className="reference-title">"{request.postTitle}"</span>
         </div>
 
-        {request.message && (
-          <div className="req-message-box">
-            <p className="req-message-text">"{request.message}"</p>
-          </div>
-        )}
+        <div className="req-card-body">
 
-        {/* Display Contact Info if Accepted */}
-        {isAccepted && (
-          <div className="req-contact-reveal">
-            <div className="contact-reveal-header">📱 Connection Approved! Contact Info:</div>
-            <div className="contact-fields">
-              <div className="contact-field">
-                <span className="field-name">Email:</span>
-                <span className="field-value">{isIncoming ? request.senderEmail : request.receiverEmail}</span>
+          <div className="req-post-reference">
+            <span>Listing:</span>
+            <span>{request.post?.title}</span>
+          </div>
+
+          {request.message && (
+              <div className="req-message-box">
+                {request.message}
               </div>
-              <div className="contact-field">
-                <span className="field-name">Phone:</span>
-                <span className="field-value">
-                  {isIncoming ? request.senderPhone || "Not provided" : request.senderPhone || "+1 (555) 019-3333"}
-                </span>
+          )}
+
+          {status === "ACCEPTED" && (
+              <div className="req-contact-reveal">
+
+                <p>Email : {displayUser?.email}</p>
+
+                <p>
+                  Phone : {displayUser?.phone || "Not Provided"}
+                </p>
+
               </div>
+          )}
+        </div>
+
+        {isIncoming && status === "PENDING" && (
+            <div className="req-card-actions">
+
+              <button
+                  className="btn-decline-req"
+                  onClick={handleDecline}
+              >
+                Decline
+              </button>
+
+              <button
+                  className="btn-accept-req"
+                  onClick={handleAccept}
+              >
+                Accept
+              </button>
+
             </div>
-          </div>
         )}
       </div>
-
-      {/* Received & Pending: Show Accept/Decline controls */}
-      {isIncoming && isPending && (
-        <div className="req-card-actions">
-          <button onClick={handleDecline} className="btn-decline-req">
-            Decline
-          </button>
-          <button onClick={handleAccept} className="btn-accept-req">
-            Accept Connection
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
-
-export default RoommateRequestCard;

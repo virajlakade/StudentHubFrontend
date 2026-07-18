@@ -1,5 +1,6 @@
 import axios from "axios";
 import { profileService } from "./profileService";
+import authService from "./authService";
 
 const API = "http://localhost:8090/api";
 
@@ -65,31 +66,38 @@ export const attendanceService = {
 
   addLog: async (log) => {
 
+    const currentUser = authService.getCurrentUser();
+
     const payload = {
       attendanceDate: log.attendanceDate,
       status: log.status.toUpperCase(),
       notes: log.notes,
       subject: {
         id: Number(log.subject.id)
+      },
+      user: {
+        id: Number(currentUser.id)
       }
     };
 
-    console.log("Attendance Payload :", payload);
+    console.log("Attendance Payload:", payload);
 
     const response = await axios.post(
         `${API}/attendance`,
         payload
     );
 
-    profileService.logActivity(
+   /* profileService.logActivity(
         "Marked attendance.",
         "attendance"
-    );
+    );*/
 
     return response.data;
   },
 
   updateLog: async (log) => {
+
+    const currentUser = authService.getCurrentUser();
 
     const payload = {
       id: log.id,
@@ -98,6 +106,9 @@ export const attendanceService = {
       notes: log.notes,
       subject: {
         id: Number(log.subject.id)
+      },
+      user: {
+        id: Number(currentUser.id)
       }
     };
 

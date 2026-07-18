@@ -4,7 +4,6 @@ import { profileService } from "../services/profileService";
 export function useProfile() {
 
   const [profile, setProfile] = useState(null);
-  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const refreshProfile = useCallback(async () => {
@@ -13,11 +12,9 @@ export function useProfile() {
 
     try {
 
-      const data = profileService.getProfile();
-      const act = profileService.getActivityTimeline();
+      const data = await profileService.getProfile();
 
       setProfile(data);
-      setActivities(act);
 
     } catch (error) {
 
@@ -41,16 +38,13 @@ export function useProfile() {
 
     try {
 
-      const res = profileService.updateProfile(updatedData);
+      const updatedProfile = await profileService.updateProfile(updatedData);
 
-      setProfile(res);
-
-      const act = profileService.getActivityTimeline();
-      setActivities(act);
+      setProfile(updatedProfile);
 
       window.dispatchEvent(new Event("profile-updated"));
 
-      return res;
+      return updatedProfile;
 
     } catch (error) {
 
@@ -97,7 +91,6 @@ export function useProfile() {
 
   return {
     profile,
-    activities,
     loading,
     refreshProfile,
     updateProfile,

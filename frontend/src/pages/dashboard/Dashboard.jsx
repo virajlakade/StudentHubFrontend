@@ -523,35 +523,7 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Upcoming Events Card */}
-            <div className="section-card">
-              <h2 className="section-title">Upcoming Events</h2>
-              <div style={{ height: "16px" }}></div>
 
-              <div className="events-list">
-                <div className="event-item">
-                  <div className="date-badge">
-                    <span className="date-month">Oct</span>
-                    <span className="date-day">12</span>
-                  </div>
-                  <div className="event-details">
-                    <h4 className="event-title">Tech Nexus Hackathon</h4>
-                    <p className="event-sub">Main Auditorium - 09:00 AM</p>
-                  </div>
-                </div>
-
-                <div className="event-item">
-                  <div className="date-badge">
-                    <span className="date-month">Oct</span>
-                    <span className="date-day">15</span>
-                  </div>
-                  <div className="event-details">
-                    <h4 className="event-title">Career Fair 2024</h4>
-                    <p className="event-sub">Sports Ground - 10:00 AM</p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
           </div>
 

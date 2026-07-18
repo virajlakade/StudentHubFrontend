@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigation } from "../../context/NavigationContext";
 import "./ConfessionForm.css";
 
+const API = "http://localhost:8090/api";
 const MAX_CHARACTERS = 500;
 
 export default function ConfessionForm({ onAdd }) {
@@ -11,34 +12,33 @@ export default function ConfessionForm({ onAdd }) {
   const [text, setText] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    loadCategories();
+    fetchCategories();
   }, []);
 
-  const loadCategories = async () => {
+  const fetchCategories = async () => {
     try {
-      const response = await axios.get(
-          "http://localhost:8090/api/confessions/categories"
-      );
+      const response = await axios.get(`${API}/confessions/categories`);
 
-      setCategories(response.data);
+      console.log("Categories API Response:", response.data);
 
-      if (response.data.length > 0) {
-        setCategory(response.data[0]);
+      if (Array.isArray(response.data)) {
+        setCategories(response.data);
+
+        if (response.data.length > 0) {
+          setCategory(response.data[0]);
+        }
+      } else {
+        setCategories([]);
       }
     } catch (err) {
-      console.error("Failed to load categories", err);
-    }
-  };
-
-  const handleTextChange = (e) => {
-    const value = e.target.value;
-
-    if (value.length <= MAX_CHARACTERS) {
-      setText(value);
-      setError("");
+      console.error("Error loading categories:", err);
+      setCategories([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,120 +46,88 @@ export default function ConfessionForm({ onAdd }) {
     e.preventDefault();
 
     if (!text.trim()) {
-      setError("Confession text cannot be empty!");
+      setError("Please enter your confession.");
       return;
     }
 
-    if (text.trim().length < 10) {
-      setError(
-          "Please write a confession of at least 10 characters."
-      );
+    if (!category) {
+      setError("Please select a category.");
       return;
     }
 
-    onAdd(text, category);
+    onAdd(text.trim(), category);
     navigateToList();
   };
 
-  const charsRemaining =
-      MAX_CHARACTERS - text.length;
-
   return (
-      <form
-          onSubmit={handleSubmit}
-          className="conf-form-comp"
-      >
+      <form className="conf-form-comp" onSubmit={handleSubmit}>
         <div className="conf-form-header">
-
           <h2 className="conf-form-title">
             Write Confession Anonymously 🤐
           </h2>
 
           <p className="conf-form-subtitle">
-            Your identity will never be tracked
-            or displayed. Express yourself freely.
+            Your identity will never be tracked or displayed.
           </p>
-
         </div>
 
         <div className="conf-form-body">
-
-          {/* Category Dropdown */}
           <div className="conf-form-group">
+            <label>Category</label>
 
-            <label htmlFor="conf-category">
-              Choose Category
-            </label>
-
-            <select
-                id="conf-category"
-                value={category}
-                onChange={(e) =>
-                    setCategory(e.target.value)
-                }
-                className="conf-select-input"
-            >
-              {categories.map((cat) => (
-                  <option
-                      key={cat}
-                      value={cat}
-                  >
-                    {cat}
-                  </option>
-              ))}
-            </select>
-
+            {loading ? (
+                <p>Loading categories...</p>
+            ) : (
+                <select
+                    className="conf-select-input"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                >
+                  {categories.length === 0 ? (
+                      <option value="">No Categories Found</option>
+                  ) : (
+                      categories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                      ))
+                  )}
+                </select>
+            )}
           </div>
 
-          {/* Text Area */}
           <div className="conf-form-group">
-
-            <div className="conf-label-row">
-
-              <label htmlFor="conf-text">
-                Confession Content *
-              </label>
-
-              <span
-                  className={`conf-char-counter ${
-                      charsRemaining < 50
-                          ? "warning"
-                          : ""
-                  }`}
-              >
-              {charsRemaining} characters left
-            </span>
-
-            </div>
+            <label>Confession</label>
 
             <textarea
-                id="conf-text"
+                className="conf-textarea-input"
+                rows={6}
+                maxLength={MAX_CHARACTERS}
                 value={text}
-                onChange={handleTextChange}
-                placeholder="Type your secret or thoughts here..."
-                rows="6"
-                className={`conf-textarea-input ${
-                    error ? "error" : ""
-                }`}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setError("");
+                }}
+                placeholder="Write your confession..."
             />
 
-            {error && (
-                <span className="conf-error-text">
-              {error}
-            </span>
-            )}
-
+            <small>
+              {text.length}/{MAX_CHARACTERS}
+            </small>
           </div>
 
+          {error && (
+              <div className="conf-error-text">
+                {error}
+              </div>
+          )}
         </div>
 
-        {/* Buttons */}
         <div className="conf-form-actions">
-
           <button
               type="button"
-              onClick={navigateToList}
               className="conf-btn-cancel"
+              onClick={navigateToList}
           >
             Cancel
           </button>
@@ -170,9 +138,7 @@ export default function ConfessionForm({ onAdd }) {
           >
             Post Anonymously
           </button>
-
         </div>
-
       </form>
   );
 }

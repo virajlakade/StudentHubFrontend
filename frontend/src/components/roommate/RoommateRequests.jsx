@@ -1,73 +1,132 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import RoommateRequestCard from "./RoommateRequestCard";
 import { profileService } from "../../services/profileService";
 import "./RoommateRequests.css";
 
-export function RoommateRequests({ requests = [], onStatusChange }) {
-  const [activeSegment, setActiveSegment] = useState("received");
-  const currentUser = profileService.getProfile();
+export default function RoommateRequests({
+                                             requests = [],
+                                             onStatusChange,
+                                         }) {
+    const [activeSegment, setActiveSegment] = useState("received");
 
-  const receivedRequests = requests.filter(
-    (req) => req.receiverEmail.toLowerCase() === currentUser.email.toLowerCase()
-  );
-  
-  const sentRequests = requests.filter(
-    (req) => req.senderEmail.toLowerCase() === currentUser.email.toLowerCase()
-  );
+    const currentUser = profileService.getProfile() || {};
+    const currentEmail = (currentUser.email || "").trim().toLowerCase();
 
-  const displayedRequests = activeSegment === "received" ? receivedRequests : sentRequests;
+    const { receivedRequests, sentRequests } = useMemo(() => {
+        const received = requests.filter((req) => {
+            const receiverEmail = (
+                req?.receiver?.email ||
+                req?.receiverEmail ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
 
-  return (
-    <div className="roommate-requests-container">
-      {/* Tab Segment Controls */}
-      <div className="requests-tabs-header">
-        <button
-          onClick={() => setActiveSegment("received")}
-          className={`requests-tab-btn ${activeSegment === "received" ? "active" : ""}`}
-        >
-          Received Requests
-          {receivedRequests.length > 0 && (
-            <span className="count-badge">{receivedRequests.length}</span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveSegment("sent")}
-          className={`requests-tab-btn ${activeSegment === "sent" ? "active" : ""}`}
-        >
-          Sent Requests
-          {sentRequests.length > 0 && (
-            <span className="count-badge">{sentRequests.length}</span>
-          )}
-        </button>
-      </div>
+            return receiverEmail === currentEmail;
+        });
 
-      {/* Requests Feed list */}
-      {displayedRequests.length === 0 ? (
-        <div className="requests-empty-state glass-card">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
-          <h4>No {activeSegment} requests found</h4>
-          <p>
-            {activeSegment === "received"
-              ? "When other students want to connect regarding your posts, they will show up here."
-              : "Explore roommate posts and click 'Connect' to initiate contact."}
-          </p>
+        const sent = requests.filter((req) => {
+            const senderEmail = (
+                req?.sender?.email ||
+                req?.senderEmail ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+            return senderEmail === currentEmail;
+        });
+
+        return {
+            receivedRequests: received,
+            sentRequests: sent,
+        };
+    }, [requests, currentEmail]);
+
+    const displayedRequests =
+        activeSegment === "received"
+            ? receivedRequests
+            : sentRequests;
+
+    return (
+        <div className="roommate-requests-container">
+            <div className="requests-tabs-header">
+                <button
+                    type="button"
+                    className={`requests-tab-btn ${
+                        activeSegment === "received" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveSegment("received")}
+                >
+                    Received Requests
+                    {receivedRequests.length > 0 && (
+                        <span className="count-badge">
+              {receivedRequests.length}
+            </span>
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    className={`requests-tab-btn ${
+                        activeSegment === "sent" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveSegment("sent")}
+                >
+                    Sent Requests
+                    {sentRequests.length > 0 && (
+                        <span className="count-badge">
+              {sentRequests.length}
+            </span>
+                    )}
+                </button>
+            </div>
+
+            {displayedRequests.length === 0 ? (
+                <div className="requests-empty-state glass-card">
+
+                    {/* Fixed SVG */}
+                    <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <rect
+                            x="3"
+                            y="5"
+                            width="18"
+                            height="14"
+                            rx="2"
+                        />
+                        <path d="M3 7L12 13L21 7" />
+                    </svg>
+
+                    <h4>
+                        No {activeSegment} requests found
+                    </h4>
+
+                    <p>
+                        {activeSegment === "received"
+                            ? "Incoming roommate requests will appear here."
+                            : "Your sent roommate requests will appear here."}
+                    </p>
+                </div>
+            ) : (
+                <div className="requests-cards-grid">
+                    {displayedRequests.map((request) => (
+                        <RoommateRequestCard
+                            key={request.id}
+                            request={request}
+                            onStatusChange={onStatusChange}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
-      ) : (
-        <div className="requests-cards-grid">
-          {displayedRequests.map((req) => (
-            <RoommateRequestCard
-              key={req.id}
-              request={req}
-              onStatusChange={onStatusChange}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    );
 }
-
-export default RoommateRequests;

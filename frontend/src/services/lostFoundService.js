@@ -5,14 +5,14 @@ const API = "http://localhost:8090/api/lostfound";
 
 export const lostFoundService = {
 
-  // ---------------- GET ALL ----------------
+  // ================= GET ALL =================
 
   getItems: async () => {
     const response = await axios.get(API);
     return response.data;
   },
 
-  // ---------------- GET BY ID ----------------
+  // ================= GET BY ID =================
 
   getItemById: async (id) => {
     try {
@@ -24,28 +24,52 @@ export const lostFoundService = {
     }
   },
 
-  // ---------------- ADD ----------------
+  // ================= ADD =================
 
   addItem: async (item) => {
 
-    const response = await axios.post(API, item);
+    const profile = await profileService.getProfile();
+
+    if (!profile) {
+      throw new Error("User not logged in.");
+    }
+
+    const formData = new FormData();
+
+    formData.append("title", item.title);
+    formData.append("status", item.status);
+    formData.append("category", item.category);
+    formData.append("location", item.location);
+    formData.append("description", item.description);
+
+    formData.append("contactName", profile.fullName);
+    formData.append("contactEmail", profile.email);
+
+    formData.append("userId", profile.id);
+
+    if (item.image) {
+      formData.append("image", item.image);
+    }
+
+    const response = await axios.post(API, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
 
     profileService.logActivity(
-        `Reported a ${response.data.status} item: "${response.data.title}".`,
+        `Reported "${response.data.title}".`,
         "lost-found"
     );
 
     return response.data;
   },
 
-  // ---------------- UPDATE ----------------
+  // ================= UPDATE =================
 
   updateItem: async (item) => {
 
-    const response = await axios.put(
-        `${API}/${item.id}`,
-        item
-    );
+    const response = await axios.put(`${API}/${item.id}`, item);
 
     profileService.logActivity(
         `Updated "${response.data.title}".`,
@@ -55,14 +79,14 @@ export const lostFoundService = {
     return response.data;
   },
 
-  // ---------------- DELETE ----------------
+  // ================= DELETE =================
 
   deleteItem: async (id) => {
 
     await axios.delete(`${API}/${id}`);
 
     profileService.logActivity(
-        "Deleted a Lost & Found item.",
+        "Deleted Lost & Found item.",
         "lost-found"
     );
 

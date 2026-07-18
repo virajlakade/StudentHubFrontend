@@ -1,129 +1,104 @@
-import { INITIAL_PROFILE } from "../data/profileData";
-import { lostFoundService } from "./lostFoundService";
-import { confessionService } from "./confessionService";
-import { roommateService } from "./roommateService";
+import axios from "axios";
 import { authService } from "./authService";
+import { confessionService } from "./confessionService";
+import { lostFoundService } from "./lostFoundService";
+import { roommateService } from "./roommateService";
 
-const PROFILE_KEY = "studenthub_profile";
-const ACTIVITIES_KEY = "studenthub_activities";
-const MY_CONFESSIONS_IDS_KEY = "studenthub_my_confession_ids";
+const API = "http://localhost:8090/api/users";
 
-const DEFAULT_ACTIVITIES = [
-  {
-    id: "act-1",
-    text: "Joined StudentHub portal.",
-    time: "5 days ago",
-    type: "system"
-  },
-  {
-    id: "act-2",
-    text: "Verified institutional email address.",
-    time: "4 days ago",
-    type: "system"
-  },
-  {
-    id: "act-3",
-    text: "Updated skills tags in profile.",
-    time: "3 days ago",
-    type: "profile"
-  }
-];
-
-const initStorage = () => {
-  if (!localStorage.getItem(PROFILE_KEY)) {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(INITIAL_PROFILE));
-  }
-
-  if (!localStorage.getItem(ACTIVITIES_KEY)) {
-    localStorage.setItem(
-        ACTIVITIES_KEY,
-        JSON.stringify(DEFAULT_ACTIVITIES)
-    );
-  }
-
-  if (!localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) {
-    localStorage.setItem(
-        MY_CONFESSIONS_IDS_KEY,
-        JSON.stringify([])
-    );
-  }
-};
+const ACTIVITY_KEY = "studenthub_activities";
 
 export const profileService = {
 
-  getProfile() {
+  // ================= PROFILE =================
 
-    initStorage();
+  async getProfile() {
+    try {
+
+      const currentUser = authService.getCurrentUser();
+
+      if (!currentUser || !currentUser.id) {
+        return null;
+      }
+
+      const response = await axios.get(`${API}/${currentUser.id}`);
+
+      return response.data;
+
+    } catch (error) {
+
+      console.error("Error fetching profile:", error);
+      return null;
+
+    }
+  },
+
+  async updateProfile(profile) {
 
     try {
 
-      const authUser = authService.getCurrentUser();
+      const currentUser = authService.getCurrentUser();
 
-      if (authUser) return authUser;
+      if (!currentUser) {
+        throw new Error("User not logged in.");
+      }
 
-      return JSON.parse(localStorage.getItem(PROFILE_KEY)) || INITIAL_PROFILE;
-
-    } catch (e) {
-
-      console.error(e);
-      return INITIAL_PROFILE;
-
-    }
-
-  },
-
-  updateProfile(updatedProfile) {
-
-    initStorage();
-
-    authService.updateSessionProfile(updatedProfile);
-
-    profileService.logActivity(
-        "Updated profile details.",
-        "profile"
-    );
-
-    return updatedProfile;
-
-  },
-
-  trackMyConfession(confessionId) {
-
-    initStorage();
-
-    const ids =
-        JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
-
-    if (!ids.includes(confessionId)) {
-
-      ids.unshift(confessionId);
-
-      localStorage.setItem(
-          MY_CONFESSIONS_IDS_KEY,
-          JSON.stringify(ids)
+      const response = await axios.put(
+          `${API}/${currentUser.id}`,
+          {
+            ...currentUser,
+            ...profile
+          }
       );
 
+      // Update session only (don't send another PUT)
+      localStorage.setItem(
+          "studenthub_current_user",
+          JSON.stringify(response.data)
+      );
+
+      window.dispatchEvent(
+          new Event("profile-updated")
+      );
+
+      this.logActivity(
+          "Updated profile information.",
+          "profile"
+      );
+
+      return response.data;
+
+    } catch (error) {
+
+      console.error(error);
+      throw error;
+
     }
 
   },
+
+  // ================= MY POSTS =================
 
   async getMyConfessions() {
 
     try {
 
-      const ids =
-          JSON.parse(localStorage.getItem(MY_CONFESSIONS_IDS_KEY)) || [];
+      const profile = await this.getProfile();
+
+      if (!profile) return [];
 
       const confessions =
           await confessionService.getConfessions();
 
-      return (Array.isArray(confessions) ? confessions : []).filter(
-          confession => ids.includes(confession.id)
+      return (confessions || []).filter(c =>
+          c.email &&
+          c.email.toLowerCase() ===
+          profile.email.toLowerCase()
       );
 
     } catch (e) {
 
-      console.error("Error reading my confessions", e);
+      console.error(e);
       return [];
 
     }
@@ -134,21 +109,22 @@ export const profileService = {
 
     try {
 
-      const profile = profileService.getProfile();
+      const profile = await this.getProfile();
+
+      if (!profile) return [];
 
       const items =
           await lostFoundService.getItems();
 
-      return (Array.isArray(items) ? items : []).filter(item =>
+      return (items || []).filter(item =>
           item.contactEmail &&
-          profile.email &&
-          item.contactEmail.toLowerCase().trim() ===
-          profile.email.toLowerCase().trim()
+          item.contactEmail.toLowerCase() ===
+          profile.email.toLowerCase()
       );
 
     } catch (e) {
 
-      console.error("Error reading LostFound", e);
+      console.error(e);
       return [];
 
     }
@@ -159,39 +135,41 @@ export const profileService = {
 
     try {
 
-      const profile = profileService.getProfile();
+      const profile = await this.getProfile();
+
+      if (!profile) return [];
 
       const posts =
           await roommateService.getPosts();
 
-      return (Array.isArray(posts) ? posts : []).filter(post =>
+      return (posts || []).filter(post =>
           post.contactEmail &&
-          profile.email &&
-          post.contactEmail.toLowerCase().trim() ===
-          profile.email.toLowerCase().trim()
+          post.contactEmail.toLowerCase() ===
+          profile.email.toLowerCase()
       );
 
     } catch (e) {
 
-      console.error("Error reading roommate posts", e);
+      console.error(e);
       return [];
 
     }
 
   },
 
-  getActivityTimeline() {
+  // ================= ACTIVITY =================
 
-    initStorage();
+  getActivityTimeline() {
 
     try {
 
-      return JSON.parse(localStorage.getItem(ACTIVITIES_KEY)) || [];
+      return JSON.parse(
+          localStorage.getItem(ACTIVITY_KEY) || "[]"
+      );
 
-    } catch (e) {
+    } catch {
 
-      console.error(e);
-      return DEFAULT_ACTIVITIES;
+      return [];
 
     }
 
@@ -199,33 +177,58 @@ export const profileService = {
 
   logActivity(text, type = "general") {
 
-    initStorage();
-
     try {
 
-      const list =
-          JSON.parse(localStorage.getItem(ACTIVITIES_KEY)) || [];
-
-      const activity = {
-        id: `act-${Date.now()}`,
-        text,
-        time: "Just now",
-        type
-      };
-
-      list.unshift(activity);
-
-      localStorage.setItem(
-          ACTIVITIES_KEY,
-          JSON.stringify(list)
+      const activities = JSON.parse(
+          localStorage.getItem(ACTIVITY_KEY) || "[]"
       );
 
-      return activity;
+      activities.unshift({
+        id: Date.now(),
+        text,
+        type,
+        time: new Date().toLocaleString()
+      });
+
+      localStorage.setItem(
+          ACTIVITY_KEY,
+          JSON.stringify(activities)
+      );
 
     } catch (e) {
 
       console.error(e);
-      return null;
+
+    }
+
+  },
+
+  // ================= CONFESSION TRACKER =================
+
+  trackMyConfession(confessionId) {
+
+    try {
+
+      const KEY = "studenthub_my_confession_ids";
+
+      const ids = JSON.parse(
+          localStorage.getItem(KEY) || "[]"
+      );
+
+      if (!ids.includes(confessionId)) {
+
+        ids.unshift(confessionId);
+
+        localStorage.setItem(
+            KEY,
+            JSON.stringify(ids)
+        );
+
+      }
+
+    } catch (e) {
+
+      console.error(e);
 
     }
 

@@ -20,10 +20,28 @@ export const placementService = {
   },
 
   // ================= ADD =================
-
   addExperience: async (experience) => {
 
-    const response = await axios.post(API, experience);
+    const profile = await profileService.getProfile();
+
+    if (!profile) {
+      throw new Error("Profile not found.");
+    }
+
+    const payload = {
+      ...experience,
+
+      user: {
+        id: profile.id
+      },
+
+      authorName: profile.fullName,      authorEmail: profile.email
+    };
+
+    console.log("PROFILE:", profile);
+    console.log("PAYLOAD:", payload);
+
+    const response = await axios.post(API, payload);
 
     profileService.logActivity(
         `Shared interview experience at "${response.data.companyName}".`,
@@ -32,7 +50,6 @@ export const placementService = {
 
     return response.data;
   },
-
   // ================= UPDATE =================
 
   updateExperience: async (experience) => {
