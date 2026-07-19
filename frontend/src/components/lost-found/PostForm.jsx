@@ -313,41 +313,22 @@ export default function PostForm() {
           </div>
 
           <div className="form-group">
-
-            <label htmlFor="contactName">
-
-              Name
-
-            </label>
-
+            <label>Name</label>
             <input
                 type="text"
-                id="contactName"
-                name="contactName"
                 value={formData.contactName}
-                onChange={handleChange}
+                readOnly
             />
-
           </div>
 
           <div className="form-group">
-
-            <label htmlFor="contactEmail">
-
-              Email
-
-            </label>
-
+            <label>Email</label>
             <input
                 type="email"
-                id="contactEmail"
-                name="contactEmail"
                 value={formData.contactEmail}
-                onChange={handleChange}
+                readOnly
             />
-
           </div>
-
         </div>
 
         <div className="form-actions">
