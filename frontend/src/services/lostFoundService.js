@@ -58,7 +58,13 @@ export const lostFoundService = {
   // ================= CLAIM =================
 
   claimItem: async (id) => {
-    const response = await axios.post(`${API}/claim/${id}`);
+
+    const profile = await profileService.getProfile();
+
+    const response = await axios.post(
+        `${API}/claim/${id}?finderUserId=${profile.id}`
+    );
+
     return response.data;
   },
 
