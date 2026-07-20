@@ -1,12 +1,10 @@
-import axios from "axios";
-import { authService } from "./authService";
+import authService, { api, USER_KEY } from "./authService";
 import { confessionService } from "./confessionService";
 import { lostFoundService } from "./lostFoundService";
 import { roommateService } from "./roommateService";
 
-const API = "http://localhost:8090/api/users";
-
 const ACTIVITY_KEY = "studenthub_activities";
+const MY_CONFESSION_KEY = "studenthub_my_confession_ids";
 
 export const profileService = {
 
@@ -14,52 +12,49 @@ export const profileService = {
 
   async getProfile() {
     try {
-
       const currentUser = authService.getCurrentUser();
 
-      if (!currentUser || !currentUser.id) {
+      if (!currentUser?.id) {
         return null;
       }
 
-      const response = await axios.get(`${API}/${currentUser.id}`);
+      const response = await api.get(`/api/users/${currentUser.id}`);
+
+      localStorage.setItem(
+          USER_KEY,
+          JSON.stringify(response.data)
+      );
 
       return response.data;
 
     } catch (error) {
-
       console.error("Error fetching profile:", error);
       return null;
-
     }
   },
 
   async updateProfile(profile) {
-
     try {
-
       const currentUser = authService.getCurrentUser();
 
-      if (!currentUser) {
+      if (!currentUser?.id) {
         throw new Error("User not logged in.");
       }
 
-      const response = await axios.put(
-          `${API}/${currentUser.id}`,
+      const response = await api.put(
+          `/api/users/${currentUser.id}`,
           {
             ...currentUser,
-            ...profile
+            ...profile,
           }
       );
 
-      // Update session only (don't send another PUT)
       localStorage.setItem(
-          "studenthub_current_user",
+          USER_KEY,
           JSON.stringify(response.data)
       );
 
-      window.dispatchEvent(
-          new Event("profile-updated")
-      );
+      window.dispatchEvent(new Event("profile-updated"));
 
       this.logActivity(
           "Updated profile information.",
@@ -69,92 +64,66 @@ export const profileService = {
       return response.data;
 
     } catch (error) {
-
       console.error(error);
       throw error;
-
     }
-
   },
 
-  // ================= MY POSTS =================
+  // ================= MY CONFESSIONS =================
 
   async getMyConfessions() {
 
-    try {
+    const profile = await this.getProfile();
 
-      const profile = await this.getProfile();
+    if (!profile) return [];
 
-      if (!profile) return [];
+    const confessions =
+        await confessionService.getConfessions();
 
-      const confessions =
-          await confessionService.getConfessions();
-
-      return (confessions || []).filter(c =>
-          c.email &&
-          c.email.toLowerCase() ===
-          profile.email.toLowerCase()
-      );
-
-    } catch (e) {
-
-      console.error(e);
-      return [];
-
-    }
-
+    return (confessions || []).filter(
+        confession =>
+            confession.email &&
+            confession.email.toLowerCase() ===
+            profile.email.toLowerCase()
+    );
   },
+
+  // ================= LOST & FOUND =================
 
   async getMyLostFoundPosts() {
 
-    try {
+    const profile = await this.getProfile();
 
-      const profile = await this.getProfile();
+    if (!profile) return [];
 
-      if (!profile) return [];
+    const items =
+        await lostFoundService.getItems();
 
-      const items =
-          await lostFoundService.getItems();
-
-      return (items || []).filter(item =>
-          item.contactEmail &&
-          item.contactEmail.toLowerCase() ===
-          profile.email.toLowerCase()
-      );
-
-    } catch (e) {
-
-      console.error(e);
-      return [];
-
-    }
-
+    return (items || []).filter(
+        item =>
+            item.contactEmail &&
+            item.contactEmail.toLowerCase() ===
+            profile.email.toLowerCase()
+    );
   },
+
+  // ================= ROOMMATE =================
 
   async getMyRoommatePosts() {
 
-    try {
+    const profile = await this.getProfile();
 
-      const profile = await this.getProfile();
+    if (!profile) return [];
 
-      if (!profile) return [];
+    const posts =
+        await roommateService.getPosts();
 
-      const posts =
-          await roommateService.getPosts();
-
-      return (posts || []).filter(post =>
-          post.contactEmail &&
-          post.contactEmail.toLowerCase() ===
-          profile.email.toLowerCase()
-      );
-
-    } catch (e) {
-
-      console.error(e);
-      return [];
-
-    }
-
+    return (posts || []).filter(
+        post =>
+            post.contactEmail &&
+            post.contactEmail.toLowerCase() ===
+            profile.email.toLowerCase()
+    );
   },
 
   // ================= ACTIVITY =================
@@ -162,17 +131,12 @@ export const profileService = {
   getActivityTimeline() {
 
     try {
-
       return JSON.parse(
           localStorage.getItem(ACTIVITY_KEY) || "[]"
       );
-
     } catch {
-
       return [];
-
     }
-
   },
 
   logActivity(text, type = "general") {
@@ -187,7 +151,7 @@ export const profileService = {
         id: Date.now(),
         text,
         type,
-        time: new Date().toLocaleString()
+        time: new Date().toLocaleString(),
       });
 
       localStorage.setItem(
@@ -196,23 +160,18 @@ export const profileService = {
       );
 
     } catch (e) {
-
       console.error(e);
-
     }
-
   },
 
-  // ================= CONFESSION TRACKER =================
+  // ================= MY CONFESSION IDS =================
 
   trackMyConfession(confessionId) {
 
     try {
 
-      const KEY = "studenthub_my_confession_ids";
-
       const ids = JSON.parse(
-          localStorage.getItem(KEY) || "[]"
+          localStorage.getItem(MY_CONFESSION_KEY) || "[]"
       );
 
       if (!ids.includes(confessionId)) {
@@ -220,19 +179,15 @@ export const profileService = {
         ids.unshift(confessionId);
 
         localStorage.setItem(
-            KEY,
+            MY_CONFESSION_KEY,
             JSON.stringify(ids)
         );
-
       }
 
     } catch (e) {
-
       console.error(e);
-
     }
-
-  }
+  },
 
 };
 

@@ -1,116 +1,196 @@
 import axios from "axios";
 
-const API = "http://localhost:8090/api/users";
-const SESSION_KEY = "studenthub_current_user";
+const BASE_URL = "http://localhost:8090";
 
-export const authService = {
+export const TOKEN_KEY = "studenthub_token";
+export const USER_KEY = "studenthub_user";
 
-  async getUsers() {
-    const response = await axios.get(API);
+export const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// ================= REQUEST INTERCEPTOR =================
+
+api.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem(TOKEN_KEY);
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// ================= RESPONSE INTERCEPTOR =================
+
+api.interceptors.response.use(
+    (response) => response,
+
+    (error) => {
+      if (error.response?.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+
+        if (!window.location.pathname.includes("login")) {
+          window.location.href = "/login";
+        }
+      }
+
+      return Promise.reject(error);
+    }
+);
+
+// ================= PRIVATE METHODS =================
+
+const saveSession = (data) => {
+  localStorage.setItem(TOKEN_KEY, data.token);
+
+  localStorage.setItem(
+      USER_KEY,
+      JSON.stringify({
+        id: data.id,
+        fullName: data.fullName,
+        email: data.email,
+        role: data.role,
+      })
+  );
+};
+
+// ================= AUTH SERVICE =================
+
+const authService = {
+  // ---------------- LOGIN ----------------
+
+  async login(email, password) {
+    const response = await api.post("/api/auth/login", {
+      email,
+      password,
+    });
+
+    saveSession(response.data);
+
     return response.data;
   },
 
-  getCurrentUser() {
-    return JSON.parse(localStorage.getItem(SESSION_KEY));
+  // ---------------- REGISTER ----------------
+
+  async register(user) {
+    const response = await api.post("/api/auth/register", {
+      fullName: user.fullName,
+      email: user.email,
+      password: user.password,
+      phone: user.phone || "",
+      branch: user.branch || "",
+      yearOfStudy: user.yearOfStudy || 1,
+      rollNumber: user.rollNumber || "",
+      degreeProgram: user.degreeProgram || "",
+    });
+
+    saveSession(response.data);
+
+    return response.data;
   },
 
-  async login(email, password) {
+  // ---------------- OAUTH ----------------
 
-    try {
+  async saveOAuthLogin(token) {
+    localStorage.setItem(TOKEN_KEY, token);
 
-      const response = await axios.get(`${API}/email/${email}`);
-      const user = response.data;
-
-      if (!user || user.password !== password) {
-        throw new Error("Invalid email or password.");
-      }
-
-      localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify(user)
-      );
-
-      return user;
-
-    } catch (error) {
-
-      throw new Error("Invalid email or password.");
-
-    }
-
+    return await this.loadCurrentUser();
   },
 
-  async register(name, email, password) {
+  // ---------------- CURRENT USER ----------------
 
+  async loadCurrentUser() {
     try {
-
-      const newUser = {
-        fullName: name,
-        email,
-        password,
-        phone: "",
-        branch: "",
-        yearOfStudy: 1,
-        rollNumber: "",
-        degreeProgram: "",
-        skills: "",
-        profileImage: "",
-        bio: ""
-      };
-
-      const response = await axios.post(API, newUser);
+      const response = await api.get("/api/users/me");
 
       localStorage.setItem(
-          SESSION_KEY,
+          USER_KEY,
           JSON.stringify(response.data)
       );
 
       return response.data;
-
     } catch (error) {
-
-      if (
-          error.response &&
-          typeof error.response.data === "string"
-      ) {
-        throw new Error(error.response.data);
-      }
-
-      throw new Error("Registration failed.");
-
+      this.logout();
+      return null;
     }
-
   },
 
+  getCurrentUser() {
+    const user = localStorage.getItem(USER_KEY);
+
+    if (!user) return null;
+
+    try {
+      return JSON.parse(user);
+    } catch {
+      return null;
+    }
+  },
+
+  // ---------------- USERS ----------------
+
+  async getUsers() {
+    const response = await api.get("/api/users");
+
+    return response.data;
+  },
+
+  async getUser(id) {
+    const response = await api.get(`/api/users/${id}`);
+
+    return response.data;
+  },
+
+  // ---------------- UPDATE PROFILE ----------------
+
   async updateSessionProfile(profile) {
+    const currentUser = this.getCurrentUser();
 
-    const current = this.getCurrentUser();
-
-    if (!current) {
+    if (!currentUser) {
       throw new Error("User not logged in.");
     }
 
-    const response = await axios.put(
-        `${API}/${current.id}`,
-        {
-          ...current,
-          ...profile
-        }
+    const response = await api.put(
+        `/api/users/${currentUser.id}`,
+        profile
     );
 
     localStorage.setItem(
-        SESSION_KEY,
+        USER_KEY,
         JSON.stringify(response.data)
     );
 
     return response.data;
-
   },
 
-  logout() {
-    localStorage.removeItem(SESSION_KEY);
-  }
+  // ---------------- TOKEN ----------------
 
+  getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  isAuthenticated() {
+    return !!this.getToken();
+  },
+
+  // ---------------- LOGOUT ----------------
+
+  logout() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+
+    if (!window.location.pathname.includes("login")) {
+      window.location.href = "/login";
+    }
+  },
 };
 
 export default authService;

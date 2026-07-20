@@ -2,34 +2,65 @@ import React, { useState } from "react";
 import AuthLayout from "../../layouts/AuthLayout";
 import RegisterForm from "../../components/auth/RegisterForm";
 import { useNavigation } from "../../context/NavigationContext";
-import { authService } from "../../services/authService";
+import authService from "../../services/authService";
 
-export function RegisterPage() {
+export default function RegisterPage() {
+
   const { login } = useNavigation();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleRegisterSubmit = async (name, email, password) => {
-    setError("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRegisterSubmit = async (
+      fullName,
+      email,
+      password
+  ) => {
+
     setLoading(true);
+    setError("");
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      authService.register(name, email, password);
-      
-      // Directly log in
-      login(email, password);
-    } catch (e) {
-      setError(e.message || "Failed to register account.");
+
+      await authService.register({
+        fullName,
+        email,
+        password,
+        phone: "",
+        branch: "",
+        yearOfStudy: 1,
+        rollNumber: "",
+        degreeProgram: "",
+      });
+
+      await login(email, password);
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+          err.response?.data?.message ||
+          err.message ||
+          "Registration failed."
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   return (
-    <AuthLayout>
-      <RegisterForm onSubmit={handleRegisterSubmit} error={error} loading={loading} />
-    </AuthLayout>
+      <AuthLayout>
+
+        <RegisterForm
+            onSubmit={handleRegisterSubmit}
+            loading={loading}
+            error={error}
+        />
+
+      </AuthLayout>
   );
 }
-
-export default RegisterPage;

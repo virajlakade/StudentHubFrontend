@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import AuthLayout from "../../layouts/AuthLayout";
 import { useNavigation } from "../../context/NavigationContext";
-import { authService } from "../../services/authService";
+import authService from "../../services/authService";
 
 export function ForgotPasswordPage() {
   const { setAuthView } = useNavigation();

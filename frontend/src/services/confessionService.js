@@ -1,121 +1,142 @@
-import axios from "axios";
+import { api } from "./authService";
 import { profileService } from "./profileService";
 
-const API = "http://localhost:8090/api";
+const API = "/api";
+
+const getCurrentUser = async () => {
+  try {
+    // Try profile service first
+    const profile = await profileService.getProfile();
+
+    if (profile && profile.id) {
+      return profile;
+    }
+  } catch (e) {
+    console.log("Profile service unavailable, using localStorage.");
+  }
+
+  // Fallback to localStorage
+  try {
+    const storedUser = localStorage.getItem("studenthub_user");
+
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+
+      if (user && user.id) {
+        return user;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading local user:", e);
+  }
+
+  return null;
+};
 
 export const confessionService = {
 
   // ================= GET ALL =================
 
   async getConfessions() {
-
     try {
-
-      const response = await axios.get(`${API}/confessions`);
+      const response = await api.get(`${API}/confessions`);
 
       console.log("Confessions Response:", response.data);
 
-      return Array.isArray(response.data)
-          ? response.data
-          : response.data.content || [];
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
 
-    } catch (error) {
-
-      console.error("Error fetching confessions:", error);
+      if (Array.isArray(response.data?.content)) {
+        return response.data.content;
+      }
 
       return [];
 
+    } catch (error) {
+      console.error("Error fetching confessions:", error);
+      return [];
     }
-
   },
 
   // ================= GET BY ID =================
 
   async getConfessionById(id) {
-
     try {
-
-      const response = await axios.get(
-          `${API}/confessions/${id}`
-      );
-
+      const response = await api.get(`${API}/confessions/${id}`);
       return response.data;
-
     } catch (error) {
-
       console.error(error);
-
       return null;
-
     }
-
   },
 
   // ================= CREATE =================
 
   async addConfession(text, category) {
 
-    try {
+    const user = await getCurrentUser();
 
-      const profile = await profileService.getProfile();
+    if (!user) {
+      alert("Please login before posting a confession.");
+      return null;
+    }
+
+    try {
 
       const payload = {
         title: category,
         message: text,
-        category,
+        category: category,
         likes: 0,
-
-        userId: profile?.id
+        userId: user.id
       };
 
-      console.log("Confession Payload:", payload);
+      console.log("Sending Confession:", payload);
 
-      const response = await axios.post(
+      const response = await api.post(
           `${API}/confessions`,
           payload
       );
 
-      profileService.trackMyConfession(
-          response.data.id
-      );
+      try {
+        profileService.trackMyConfession(response.data.id);
+      } catch (e) {}
 
-      profileService.logActivity(
-          `Posted confession in "${category}".`,
-          "confession"
-      );
+      try {
+        profileService.logActivity(
+            `Posted confession in "${category}".`,
+            "confession"
+        );
+      } catch (e) {}
 
       return response.data;
 
     } catch (error) {
+      console.error("Error creating confession:", error);
 
-      console.error(error);
+      if (error.response) {
+        console.error(error.response.data);
+      }
 
       return null;
-
     }
-
   },
 
   // ================= LIKE =================
 
   async likeConfession(id) {
-
     try {
-
-      const response = await axios.put(
+      const response = await api.put(
           `${API}/confessions/${id}/like`
       );
 
       return response.data;
 
     } catch (error) {
-
       console.error(error);
-
       return null;
-
     }
-
   },
 
   // ================= COMMENTS =================
@@ -124,16 +145,17 @@ export const confessionService = {
 
     try {
 
-      const response = await axios.get(
+      const response = await api.get(
           `${API}/comments/${confessionId}`
       );
 
-      return response.data;
+      return Array.isArray(response.data)
+          ? response.data
+          : [];
 
     } catch (error) {
 
       console.error(error);
-
       return [];
 
     }
@@ -144,17 +166,19 @@ export const confessionService = {
 
     try {
 
-      const response = await axios.post(
+      const response = await api.post(
           `${API}/comments/${confessionId}`,
           {
             commentText
           }
       );
 
-      profileService.logActivity(
-          "Added a confession comment.",
-          "confession"
-      );
+      try {
+        profileService.logActivity(
+            "Added a confession comment.",
+            "confession"
+        );
+      } catch (e) {}
 
       return response.data;
 

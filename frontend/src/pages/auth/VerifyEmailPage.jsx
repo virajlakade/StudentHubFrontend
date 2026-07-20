@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import AuthLayout from "../../layouts/AuthLayout";
 import { useNavigation } from "../../context/NavigationContext";
-import { authService } from "../../services/authService";
+import authService from "../../services/authService";
 
 export function VerifyEmailPage() {
   const { setAuthView, emailToVerify } = useNavigation();
+
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,92 +15,117 @@ export function VerifyEmailPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!code || code.length !== 6) {
+
+    if (code.length !== 6) {
       setError("Please enter a valid 6-digit verification code.");
       return;
     }
 
     setError("");
     setLoading(true);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      authService.verifyEmail(targetEmail, code);
+      // Temporary verification until backend API is implemented
+      if (code !== "123456") {
+        throw new Error("Invalid verification code.");
+      }
+
       setSuccess(true);
-    } catch (e) {
-      setError(e.message || "Failed to verify email. Try '123456' as a code.");
+    } catch (err) {
+      setError(err.message || "Verification failed.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+        <AuthLayout>
+          <div className="auth-form">
+            <div className="auth-header-info">
+              <h2 className="auth-title">Email Verified!</h2>
+              <p className="auth-subtitle">
+                Your student account is now active.
+              </p>
+            </div>
+
+            <div className="auth-success-banner">
+              ✨ Your email has been verified successfully.
+            </div>
+
+            <button
+                className="btn-auth-submit"
+                onClick={() => setAuthView("login")}
+                style={{ width: "100%" }}
+            >
+              Go to Login
+            </button>
+          </div>
+        </AuthLayout>
+    );
+  }
+
   return (
-    <AuthLayout>
-      {success ? (
-        <div className="auth-form">
-          <div className="auth-header-info">
-            <h2 className="auth-title">Email Verified!</h2>
-            <p className="auth-subtitle">Your student account is now active.</p>
-          </div>
-
-          <div className="auth-success-banner">
-            ✨ Your email has been verified successfully. You can now log in using your password.
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setAuthView("login")}
-            className="btn-auth-submit"
-            style={{ width: "100%" }}
-          >
-            Go to Login
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="auth-form">
+      <AuthLayout>
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-header-info">
             <h2 className="auth-title">Verify Email</h2>
-            <p className="auth-subtitle">Enter verification code sent to {targetEmail}.</p>
+            <p className="auth-subtitle">
+              Enter the verification code sent to
+              <br />
+              <strong>{targetEmail}</strong>
+            </p>
           </div>
 
           {error && <div className="auth-error-banner">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="verify-code">6-Digit Verification Code</label>
+            <label htmlFor="code">Verification Code</label>
+
             <input
-              type="text"
-              id="verify-code"
-              maxLength="6"
-              value={code}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^\d]/g, "");
-                setCode(val);
-                setError("");
-              }}
-              placeholder="e.g. 123456"
-              disabled={loading}
-              required
-              style={{ letterSpacing: "8px", textIndent: "4px", textAlign: "center", fontSize: "18px" }}
+                id="code"
+                type="text"
+                value={code}
+                maxLength={6}
+                disabled={loading}
+                placeholder="123456"
+                onChange={(e) => {
+                  setCode(e.target.value.replace(/\D/g, ""));
+                  setError("");
+                }}
+                style={{
+                  textAlign: "center",
+                  letterSpacing: "8px",
+                  fontSize: "18px",
+                }}
+                required
             />
           </div>
 
-          <button type="submit" className="btn-auth-submit" disabled={loading}>
-            {loading ? <span className="auth-spinner"></span> : "Verify Email"}
+          <button
+              type="submit"
+              className="btn-auth-submit"
+              disabled={loading}
+          >
+            {loading ? "Verifying..." : "Verify Email"}
           </button>
 
           <div className="auth-footer-prompt">
-            <span>Didn't receive code?</span>
+            <span>Didn't receive the code?</span>
+
             <button
-              type="button"
-              onClick={() => alert("Verification code has been resent to " + targetEmail)}
-              className="auth-link"
-              disabled={loading}
+                type="button"
+                className="auth-link"
+                disabled={loading}
+                onClick={() =>
+                    alert(`Verification code has been resent to ${targetEmail}`)
+                }
             >
               Resend Code
             </button>
           </div>
         </form>
-      )}
-    </AuthLayout>
+      </AuthLayout>
   );
 }
 

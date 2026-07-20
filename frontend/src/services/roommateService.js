@@ -1,24 +1,30 @@
-import axios from "axios";
+import { api } from "./authService";
 import { profileService } from "./profileService";
 
-const POST_API = "http://localhost:8090/api/roommate/posts";
-const REQUEST_API = "http://localhost:8090/api/roommate/requests";
+const POST_API = "/api/roommate/posts";
+const REQUEST_API = "/api/roommate/requests";
 
 export const roommateService = {
+
   // ================= POSTS =================
 
   getPosts: async () => {
-    const response = await axios.get(POST_API);
+    const response = await api.get(POST_API);
     return response.data;
   },
 
   getPostById: async (id) => {
-    const response = await axios.get(`${POST_API}/${id}`);
+    const response = await api.get(`${POST_API}/${id}`);
     return response.data;
   },
 
   createPost: async (postData) => {
-    const profile = profileService.getProfile();
+
+    const profile = await profileService.getProfile();
+
+    if (!profile) {
+      throw new Error("User profile not found.");
+    }
 
     const payload = {
       title: postData.title,
@@ -29,18 +35,19 @@ export const roommateService = {
       gender: postData.gender,
       occupancy: postData.occupancy,
       status: "OPEN",
+
       userId: profile.id,
-      contactName: profile.name,
+      contactName: profile.fullName,
       contactEmail: profile.email,
       contactPhone: profile.phone,
       avatar: profile.avatar,
-      degreeProgram: profile.degree,
-      yearOfStudy: profile.year,
+      degreeProgram: profile.degreeProgram,
+      yearOfStudy: profile.yearOfStudy,
     };
 
     console.log("POST PAYLOAD:", payload);
 
-    const response = await axios.post(POST_API, payload);
+    const response = await api.post(POST_API, payload);
 
     profileService.logActivity(
         `Published roommate requirement: "${response.data.title}".`,
@@ -51,7 +58,8 @@ export const roommateService = {
   },
 
   deletePost: async (id) => {
-    await axios.delete(`${POST_API}/${id}`);
+
+    await api.delete(`${POST_API}/${id}`);
 
     profileService.logActivity(
         "Deleted roommate requirement.",
@@ -64,16 +72,17 @@ export const roommateService = {
   // ================= REQUESTS =================
 
   getRequests: async () => {
-    const response = await axios.get(REQUEST_API);
 
-    console.log("REQUEST DATA");
-    console.log(response.data);
+    const response = await api.get(REQUEST_API);
+
+    console.log("REQUEST DATA:", response.data);
 
     return response.data;
   },
 
   sendConnectionRequest: async (post, message) => {
-    const profile = profileService.getProfile();
+
+    const profile = await profileService.getProfile();
 
     if (!profile) {
       throw new Error("User profile not found.");
@@ -84,8 +93,7 @@ export const roommateService = {
     }
 
     if (profile.id === post.user.id) {
-      alert("You cannot send a request to your own listing.");
-      return;
+      throw new Error("You cannot send a request to your own listing.");
     }
 
     const payload = {
@@ -99,13 +107,12 @@ export const roommateService = {
         id: post.user.id,
       },
       status: "PENDING",
-      message: message,
+      message,
     };
 
-    console.log("Request Payload:");
-    console.log(payload);
+    console.log("Request Payload:", payload);
 
-    const response = await axios.post(REQUEST_API, payload);
+    const response = await api.post(REQUEST_API, payload);
 
     profileService.logActivity(
         "Sent roommate connection request.",
@@ -116,9 +123,10 @@ export const roommateService = {
   },
 
   updateRequestStatus: async (requestId, status) => {
+
     console.log("Updating Request:", requestId, status);
 
-    const response = await axios.put(
+    const response = await api.put(
         `${REQUEST_API}/${requestId}`,
         {
           status,
@@ -132,6 +140,7 @@ export const roommateService = {
 
     return response.data;
   },
+
 };
 
 export default roommateService;

@@ -1,21 +1,21 @@
-import axios from "axios";
+import { api } from "./authService";
 import { profileService } from "./profileService";
 
-const API = "http://localhost:8090/api/lostfound";
+const API = "/api/lostfound";
 
 export const lostFoundService = {
 
   // ================= GET ALL =================
 
   getItems: async () => {
-    const response = await axios.get(API);
+    const response = await api.get(API);
     return response.data;
   },
 
   // ================= GET BY ID =================
 
   getItemById: async (id) => {
-    const response = await axios.get(`${API}/${id}`);
+    const response = await api.get(`${API}/${id}`);
     return response.data;
   },
 
@@ -45,7 +45,11 @@ export const lostFoundService = {
       formData.append("image", item.image);
     }
 
-    const response = await axios.post(API, formData);
+    const response = await api.post(API, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
     profileService.logActivity(
         `Reported "${response.data.title}".`,
@@ -61,7 +65,7 @@ export const lostFoundService = {
 
     const profile = await profileService.getProfile();
 
-    const response = await axios.post(
+    const response = await api.post(
         `${API}/claim/${id}?finderUserId=${profile.id}`
     );
 
@@ -72,7 +76,7 @@ export const lostFoundService = {
 
   updateItem: async (item) => {
 
-    const response = await axios.put(`${API}/${item.id}`, item);
+    const response = await api.put(`${API}/${item.id}`, item);
 
     profileService.logActivity(
         `Updated "${response.data.title}".`,
@@ -86,7 +90,7 @@ export const lostFoundService = {
 
   deleteItem: async (id) => {
 
-    await axios.delete(`${API}/${id}`);
+    await api.delete(`${API}/${id}`);
 
     profileService.logActivity(
         "Deleted Lost & Found item.",

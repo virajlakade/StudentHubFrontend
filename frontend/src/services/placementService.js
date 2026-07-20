@@ -1,25 +1,26 @@
-import axios from "axios";
+import { api } from "./authService";
 import { profileService } from "./profileService";
 
-const API = "http://localhost:8090/api/placements";
+const API = "/api/placements";
 
 export const placementService = {
 
   // ================= GET ALL =================
 
   getExperiences: async () => {
-    const response = await axios.get(API);
+    const response = await api.get(API);
     return response.data;
   },
 
   // ================= GET BY ID =================
 
   getExperienceById: async (id) => {
-    const response = await axios.get(`${API}/${id}`);
+    const response = await api.get(`${API}/${id}`);
     return response.data;
   },
 
   // ================= ADD =================
+
   addExperience: async (experience) => {
 
     const profile = await profileService.getProfile();
@@ -30,18 +31,17 @@ export const placementService = {
 
     const payload = {
       ...experience,
-
       user: {
         id: profile.id
       },
-
-      authorName: profile.fullName,      authorEmail: profile.email
+      authorName: profile.fullName,
+      authorEmail: profile.email
     };
 
     console.log("PROFILE:", profile);
     console.log("PAYLOAD:", payload);
 
-    const response = await axios.post(API, payload);
+    const response = await api.post(API, payload);
 
     profileService.logActivity(
         `Shared interview experience at "${response.data.companyName}".`,
@@ -50,11 +50,12 @@ export const placementService = {
 
     return response.data;
   },
+
   // ================= UPDATE =================
 
   updateExperience: async (experience) => {
 
-    const response = await axios.put(
+    const response = await api.put(
         `${API}/${experience.id}`,
         experience
     );
@@ -71,7 +72,7 @@ export const placementService = {
 
   deleteExperience: async (id) => {
 
-    await axios.delete(`${API}/${id}`);
+    await api.delete(`${API}/${id}`);
 
     profileService.logActivity(
         "Deleted an interview experience.",
@@ -85,7 +86,7 @@ export const placementService = {
 
   likeExperience: async (id) => {
 
-    const response = await axios.put(`${API}/${id}/like`);
+    const response = await api.put(`${API}/${id}/like`);
 
     return response.data;
   }
