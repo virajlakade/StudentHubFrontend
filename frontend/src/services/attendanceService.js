@@ -4,19 +4,35 @@ import authService from "./authService";
 
 const API = "/api";
 
+const getCurrentUserId = () => {
+  const currentUser = authService.getCurrentUser();
+
+  if (!currentUser) {
+    throw new Error("User not logged in.");
+  }
+
+  return currentUser.id;
+};
+
 export const attendanceService = {
 
   // ================= SUBJECT =================
 
   getSubjects: async () => {
-    const response = await api.get(`${API}/subjects`);
+    const userId = getCurrentUserId();
+
+    const response = await api.get(
+        `${API}/subjects/user/${userId}`
+    );
+
     return response.data;
   },
 
   addSubject: async (subject) => {
+    const userId = getCurrentUserId();
 
     const response = await api.post(
-        `${API}/subjects`,
+        `${API}/subjects/user/${userId}`,
         subject
     );
 
@@ -29,9 +45,10 @@ export const attendanceService = {
   },
 
   updateSubject: async (subject) => {
+    const userId = getCurrentUserId();
 
     const response = await api.put(
-        `${API}/subjects/${subject.id}`,
+        `${API}/subjects/user/${userId}/${subject.id}`,
         subject
     );
 
@@ -44,8 +61,11 @@ export const attendanceService = {
   },
 
   deleteSubject: async (id) => {
+    const userId = getCurrentUserId();
 
-    await api.delete(`${API}/subjects/${id}`);
+    await api.delete(
+        `${API}/subjects/user/${userId}/${id}`
+    );
 
     profileService.logActivity(
         "Deleted subject.",
@@ -58,28 +78,27 @@ export const attendanceService = {
   // ================= ATTENDANCE =================
 
   getLogs: async () => {
+    const userId = getCurrentUserId();
 
-    const response = await api.get(`${API}/attendance`);
+    const response = await api.get(
+        `${API}/attendance/user/${userId}`
+    );
 
     return response.data;
   },
 
   getLogsBySubject: async (subjectId) => {
+    const userId = getCurrentUserId();
 
     const response = await api.get(
-        `${API}/attendance/subject/${subjectId}`
+        `${API}/attendance/user/${userId}/subject/${subjectId}`
     );
 
     return response.data;
   },
 
   addLog: async (log) => {
-
-    const currentUser = authService.getCurrentUser();
-
-    if (!currentUser) {
-      throw new Error("User not logged in.");
-    }
+    const userId = getCurrentUserId();
 
     const payload = {
       attendanceDate: log.attendanceDate,
@@ -87,16 +106,13 @@ export const attendanceService = {
       notes: log.notes,
       subject: {
         id: Number(log.subject.id)
-      },
-      user: {
-        id: Number(currentUser.id)
       }
     };
 
     console.log("Attendance Payload:", payload);
 
     const response = await api.post(
-        `${API}/attendance`,
+        `${API}/attendance/user/${userId}`,
         payload
     );
 
@@ -109,28 +125,19 @@ export const attendanceService = {
   },
 
   updateLog: async (log) => {
-
-    const currentUser = authService.getCurrentUser();
-
-    if (!currentUser) {
-      throw new Error("User not logged in.");
-    }
+    const userId = getCurrentUserId();
 
     const payload = {
-      id: log.id,
       attendanceDate: log.attendanceDate,
       status: log.status.toUpperCase(),
       notes: log.notes,
       subject: {
         id: Number(log.subject.id)
-      },
-      user: {
-        id: Number(currentUser.id)
       }
     };
 
     const response = await api.put(
-        `${API}/attendance/${log.id}`,
+        `${API}/attendance/user/${userId}/${log.id}`,
         payload
     );
 
@@ -143,8 +150,11 @@ export const attendanceService = {
   },
 
   deleteLog: async (id) => {
+    const userId = getCurrentUserId();
 
-    await api.delete(`${API}/attendance/${id}`);
+    await api.delete(
+        `${API}/attendance/user/${userId}/${id}`
+    );
 
     profileService.logActivity(
         "Deleted attendance.",
