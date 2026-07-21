@@ -75,6 +75,22 @@ export const attendanceService = {
     return true;
   },
 
+  // Delete all subjects
+  deleteAllSubjects: async () => {
+    const userId = getCurrentUserId();
+
+    await api.delete(
+        `${API}/subjects/user/${userId}/all`
+    );
+
+    profileService.logActivity(
+        "Deleted all subjects.",
+        "attendance"
+    );
+
+    return true;
+  },
+
   // ================= ATTENDANCE =================
 
   getLogs: async () => {
@@ -105,8 +121,8 @@ export const attendanceService = {
       status: log.status.toUpperCase(),
       notes: log.notes,
       subject: {
-        id: Number(log.subject.id)
-      }
+        id: Number(log.subject.id),
+      },
     };
 
     console.log("Attendance Payload:", payload);
@@ -132,8 +148,8 @@ export const attendanceService = {
       status: log.status.toUpperCase(),
       notes: log.notes,
       subject: {
-        id: Number(log.subject.id)
-      }
+        id: Number(log.subject.id),
+      },
     };
 
     const response = await api.put(
@@ -158,21 +174,6 @@ export const attendanceService = {
 
     profileService.logActivity(
         "Deleted attendance.",
-        "attendance"
-    );
-
-    return true;
-  },
-  deleteAllSubjects: async () => {
-
-    const userId = getCurrentUserId();
-
-    await api.delete(
-        `${API}/subjects/user/${userId}/all`
-    );
-
-    profileService.logActivity(
-        "Deleted all subjects.",
         "attendance"
     );
 

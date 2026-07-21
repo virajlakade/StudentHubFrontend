@@ -5,6 +5,7 @@ import { calculateStats } from "../../utils/attendanceUtils";
 import AttendanceStats from "../../components/attendance/AttendanceStats";
 import AttendanceCard from "../../components/attendance/AttendanceCard";
 import AttendanceForm from "../../components/attendance/AttendanceForm";
+import attendanceService from "../../services/attendanceService";
 import "./AttendancePage.css";
 
 export function AttendancePage() {
@@ -51,6 +52,26 @@ export function AttendancePage() {
     setIsFormOpen(false);
   };
 
+  // Delete All Subjects
+  const handleDeleteAllSubjects = async () => {
+    const confirmDelete = window.confirm(
+        "Are you sure you want to delete all subjects?\n\nThis will also delete all attendance records."
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await attendanceService.deleteAllSubjects();
+
+      alert("All subjects deleted successfully.");
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete all subjects.");
+    }
+  };
+
   return (
       <div className="attendance-page">
 
@@ -66,7 +87,10 @@ export function AttendancePage() {
             </p>
           </div>
 
-          <div className="header-actions">
+          <div
+              className="header-actions"
+              style={{ display: "flex", gap: "12px" }}
+          >
             <button
                 onClick={handleOpenSubjectForm}
                 className="btn-primary-add"
@@ -88,6 +112,21 @@ export function AttendancePage() {
 
               Add Subject
             </button>
+
+            <button
+                onClick={handleDeleteAllSubjects}
+                style={{
+                  backgroundColor: "#dc2626",
+                  color: "#fff",
+                  border: "none",
+                  padding: "10px 18px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+            >
+              Delete All Subjects
+            </button>
           </div>
         </div>
 
@@ -101,13 +140,11 @@ export function AttendancePage() {
         {/* Subject Cards */}
 
         <div className="recent-logs-section">
-
           <h2 className="subjects-grid-title">
             Subjects Breakdown
           </h2>
 
           {subjects.length === 0 ? (
-
               <div
                   className="table-empty-state glass-card"
                   style={{ padding: "40px 20px" }}
@@ -129,14 +166,9 @@ export function AttendancePage() {
                   No subjects added yet. Click "Add Subject" to begin tracking.
                 </p>
               </div>
-
           ) : (
-
               <div className="subjects-cards-grid">
-
                 {subjects.map((subject) => {
-
-                  // Backend returns subject object inside attendance log
                   const subLogs = logs.filter(
                       (log) => log.subject?.id === subject.id
                   );
@@ -152,13 +184,9 @@ export function AttendancePage() {
                           onViewDetails={navigateToDetails}
                       />
                   );
-
                 })}
-
               </div>
-
           )}
-
         </div>
 
         {/* Modal */}
@@ -171,7 +199,6 @@ export function AttendancePage() {
             initialData={editingData}
             onSubmit={handleFormSubmit}
         />
-
       </div>
   );
 }
