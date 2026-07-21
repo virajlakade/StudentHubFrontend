@@ -162,6 +162,21 @@ export const attendanceService = {
     );
 
     return true;
+  },
+  deleteAllSubjects: async () => {
+
+    const userId = getCurrentUserId();
+
+    await api.delete(
+        `${API}/subjects/user/${userId}/all`
+    );
+
+    profileService.logActivity(
+        "Deleted all subjects.",
+        "attendance"
+    );
+
+    return true;
   }
 
 };
