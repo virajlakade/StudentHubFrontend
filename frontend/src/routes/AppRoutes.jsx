@@ -27,6 +27,8 @@ import RoommatePage from "../pages/roommate/RoommatePage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 
 import authService from "../services/authService";
@@ -57,8 +59,7 @@ export default function AppRoutes() {
 
       try {
 
-        const profile =
-            await authService.saveOAuthLogin(token);
+        const profile = await authService.saveOAuthLogin(token);
 
         setUser(profile);
 
@@ -93,10 +94,16 @@ export default function AppRoutes() {
       case "register":
         return <RegisterPage />;
 
-      case "forgot-password":
+      case "forgotPassword":
         return <ForgotPasswordPage />;
 
-      case "verify-email":
+      case "verifyOtp":
+        return <VerifyOtpPage />;
+
+      case "resetPassword":
+        return <ResetPasswordPage />;
+
+      case "verifyEmail":
         return <VerifyEmailPage />;
 
       case "login":
@@ -106,6 +113,8 @@ export default function AppRoutes() {
     }
 
   }
+
+  // ================= MAIN APP =================
 
   let page;
 
@@ -199,5 +208,4 @@ export default function AppRoutes() {
         {page}
       </DashboardLayout>
   );
-
 }

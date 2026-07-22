@@ -191,6 +191,38 @@ const authService = {
       window.location.href = "/login";
     }
   },
+  // ---------------- FORGOT PASSWORD ----------------
+
+  async forgotPassword(email) {
+    const response = await api.post("/api/auth/forgot-password", {
+      email,
+    });
+
+    return response.data;
+  },
+
+// ---------------- VERIFY OTP ----------------
+
+  async verifyOtp(email, otp) {
+    const response = await api.post("/api/auth/verify-otp", {
+      email,
+      otp,
+    });
+
+    return response.data;
+  },
+
+// ---------------- RESET PASSWORD ----------------
+
+  async resetPassword(email, otp, newPassword) {
+    const response = await api.post("/api/auth/reset-password", {
+      email,
+      otp,
+      newPassword,
+    });
+
+    return response.data;
+  },
 };
 
 export default authService;

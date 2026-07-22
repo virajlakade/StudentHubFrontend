@@ -3,99 +3,126 @@ import AuthLayout from "../../layouts/AuthLayout";
 import { useNavigation } from "../../context/NavigationContext";
 import authService from "../../services/authService";
 
-export function ForgotPasswordPage() {
+export default function ForgotPasswordPage() {
+
   const { setAuthView } = useNavigation();
+
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
-    if (!email) {
-      setError("Please enter your institutional email.");
+
+    if (!email.trim()) {
+      setError("Please enter your registered email.");
       return;
     }
 
-    setError("");
     setLoading(true);
+    setError("");
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      authService.forgotPassword(email);
-      setSuccess(true);
-    } catch (e) {
-      setError(e.message || "Failed to submit recovery request.");
+
+      const message = await authService.forgotPassword(email);
+
+      // Save email for Verify OTP page
+      localStorage.setItem("resetEmail", email);
+
+      alert(message);
+
+      setAuthView("verifyOtp");
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+          err.response?.data?.message ||
+          err.response?.data ||
+          err.message ||
+          "Failed to send OTP."
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   return (
-    <AuthLayout>
-      {success ? (
-        <div className="auth-form">
+
+      <AuthLayout>
+
+        <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+        >
+
           <div className="auth-header-info">
-            <h2 className="auth-title">Check Your Email</h2>
-            <p className="auth-subtitle">Recovery instructions sent successfully.</p>
+
+            <h2 className="auth-title">
+              Forgot Password
+            </h2>
+
+            <p className="auth-subtitle">
+              Enter your registered email address to receive a verification OTP.
+            </p>
+
           </div>
 
-          <div className="auth-success-banner">
-            🔑 Password reset instructions and recovery link have been sent to <strong>{email}</strong>. Please follow the instructions to secure your account.
+          {error && (
+              <div className="auth-error-banner">
+                {error}
+              </div>
+          )}
+
+          <div className="form-group">
+
+            <label>Email Address</label>
+
+            <input
+                type="email"
+                value={email}
+                placeholder="Enter your registered email"
+                disabled={loading}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                required
+            />
+
           </div>
 
           <button
-            type="button"
-            onClick={() => setAuthView("login")}
-            className="btn-auth-submit"
-            style={{ width: "100%" }}
-          >
-            Back to Sign In
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-header-info">
-            <h2 className="auth-title">Reset Password</h2>
-            <p className="auth-subtitle">Enter your institutional email to recover access.</p>
-          </div>
-
-          {error && <div className="auth-error-banner">{error}</div>}
-
-          <div className="form-group">
-            <label htmlFor="recovery-email">Institutional Email</label>
-            <input
-              type="email"
-              id="recovery-email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError("");
-              }}
-              placeholder="e.g. student@studenthub.edu"
+              type="submit"
+              className="btn-auth-submit"
               disabled={loading}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn-auth-submit" disabled={loading}>
-            {loading ? <span className="auth-spinner"></span> : "Send Recovery Link"}
+          >
+            {loading ? "Sending OTP..." : "Send OTP"}
           </button>
 
           <div className="auth-footer-prompt">
-            <span>Remembered password?</span>
+
+            <span>Remember your password?</span>
+
             <button
-              type="button"
-              onClick={() => setAuthView("login")}
-              className="auth-link"
-              disabled={loading}
+                type="button"
+                className="auth-link"
+                disabled={loading}
+                onClick={() => setAuthView("login")}
             >
-              Sign In
+              Login
             </button>
+
           </div>
+
         </form>
-      )}
-    </AuthLayout>
+
+      </AuthLayout>
+
   );
 }
-
-export default ForgotPasswordPage;

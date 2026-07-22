@@ -31,6 +31,7 @@ export default function LoginPage() {
 
       setError(
           err.response?.data?.message ||
+          err.response?.data ||
           "Invalid email or password."
       );
 
@@ -98,6 +99,24 @@ export default function LoginPage() {
                   required
               />
             </label>
+
+            <div
+                style={{
+                  textAlign: "right",
+                  marginTop: "-8px",
+                  marginBottom: "8px",
+                }}
+            >
+              <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() =>
+                      setAuthView("forgotPassword")
+                  }
+              >
+                Forgot Password?
+              </button>
+            </div>
 
             <button
                 type="submit"
