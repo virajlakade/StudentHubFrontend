@@ -7,9 +7,7 @@ export function useConfessions() {
   const [loading, setLoading] = useState(true);
 
   const refreshConfessions = useCallback(async () => {
-
     try {
-
       setLoading(true);
 
       const data = await confessionService.getConfessions();
@@ -17,46 +15,55 @@ export function useConfessions() {
       setConfessions(Array.isArray(data) ? data : []);
 
     } catch (error) {
-
       console.error("Error fetching confessions", error);
-
       setConfessions([]);
-
     } finally {
-
       setLoading(false);
-
     }
-
   }, []);
 
   useEffect(() => {
-
     refreshConfessions();
-
   }, [refreshConfessions]);
 
   const addConfession = useCallback(async (text, category) => {
-
     const newConfession =
         await confessionService.addConfession(text, category);
 
     setConfessions(prev => [newConfession, ...prev]);
 
     return newConfession;
-
   }, []);
 
   const likeConfession = useCallback(async (id) => {
 
-    const updated =
-        await confessionService.likeConfession(id);
+    try {
 
-    setConfessions(prev =>
-        prev.map(confession =>
-            confession.id === id ? updated : confession
-        )
-    );
+      const updated =
+          await confessionService.likeConfession(id);
+
+      setConfessions(prev =>
+          prev.map(confession =>
+              confession.id === id ? updated : confession
+          )
+      );
+
+      return updated;
+
+    } catch (error) {
+
+      console.error("Error liking confession:", error);
+
+      if (error.response?.status === 401) {
+        alert("Please login to like confessions.");
+      } else if (error.response?.status === 409) {
+        alert("You have already liked this confession.");
+      } else {
+        alert("Unable to like confession.");
+      }
+
+      return null;
+    }
 
   }, []);
 
@@ -80,7 +87,6 @@ export function useConfessions() {
   return {
 
     confessions,
-
     loading,
 
     refreshConfessions,
