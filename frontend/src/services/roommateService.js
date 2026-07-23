@@ -19,49 +19,67 @@ export const roommateService = {
   },
 
   createPost: async (postData) => {
-
     const profile = await profileService.getProfile();
 
     if (!profile) {
       throw new Error("User profile not found.");
     }
 
+    if (!profile.id) {
+      throw new Error("User ID not found.");
+    }
+
     const payload = {
-      title: postData.title,
-      location: postData.location,
+      title: postData.title?.trim(),
+      description: postData.description?.trim() || "",
+      location: postData.location?.trim(),
       rent: Number(postData.rent),
-      description: postData.description,
-      tags: postData.tags || [],
       gender: postData.gender,
       occupancy: postData.occupancy,
       status: "OPEN",
+      tags: Array.isArray(postData.tags) ? postData.tags : [],
 
-      userId: profile.id,
+      user: {
+        id: profile.id,
+      },
+
       contactName: profile.fullName,
       contactEmail: profile.email,
       contactPhone: profile.phone,
-      avatar: profile.avatar,
+      avatar: profile.profileImage,
+      branch: profile.branch,
       degreeProgram: profile.degreeProgram,
       yearOfStudy: profile.yearOfStudy,
     };
 
-    console.log("POST PAYLOAD:", payload);
+    console.log("Roommate Payload");
+    console.log(JSON.stringify(payload, null, 2));
 
-    const response = await api.post(POST_API, payload);
+    try {
+      const response = await api.post(POST_API, payload);
 
-    profileService.logActivity(
-        `Published roommate requirement: "${response.data.title}".`,
-        "roommate"
-    );
+      await profileService.logActivity(
+          `Published roommate requirement: "${response.data.title}".`,
+          "roommate"
+      );
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      console.error("Create Post Error:", error);
+
+      if (error.response) {
+        console.error("Status:", error.response.status);
+        console.error("Response:", error.response.data);
+      }
+
+      throw error;
+    }
   },
 
   deletePost: async (id) => {
-
     await api.delete(`${POST_API}/${id}`);
 
-    profileService.logActivity(
+    await profileService.logActivity(
         "Deleted roommate requirement.",
         "roommate"
     );
@@ -72,16 +90,11 @@ export const roommateService = {
   // ================= REQUESTS =================
 
   getRequests: async () => {
-
     const response = await api.get(REQUEST_API);
-
-    console.log("REQUEST DATA:", response.data);
-
     return response.data;
   },
 
   sendConnectionRequest: async (post, message) => {
-
     const profile = await profileService.getProfile();
 
     if (!profile) {
@@ -89,7 +102,7 @@ export const roommateService = {
     }
 
     if (!post?.user?.id) {
-      throw new Error("Post owner information is missing.");
+      throw new Error("Post owner not found.");
     }
 
     if (profile.id === post.user.id) {
@@ -110,11 +123,12 @@ export const roommateService = {
       message,
     };
 
-    console.log("Request Payload:", payload);
+    console.log("Request Payload");
+    console.log(JSON.stringify(payload, null, 2));
 
     const response = await api.post(REQUEST_API, payload);
 
-    profileService.logActivity(
+    await profileService.logActivity(
         "Sent roommate connection request.",
         "roommate"
     );
@@ -123,17 +137,11 @@ export const roommateService = {
   },
 
   updateRequestStatus: async (requestId, status) => {
-
-    console.log("Updating Request:", requestId, status);
-
     const response = await api.put(
-        `${REQUEST_API}/${requestId}`,
-        {
-          status,
-        }
+        `${REQUEST_API}/${requestId}/${status}`
     );
 
-    profileService.logActivity(
+    await profileService.logActivity(
         `${status} roommate connection request.`,
         "roommate"
     );

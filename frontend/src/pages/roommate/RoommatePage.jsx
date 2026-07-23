@@ -19,6 +19,7 @@ export default function RoommatePage() {
 
   const [posts, setPosts] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,13 +28,20 @@ export default function RoommatePage() {
 
   const loadData = async () => {
     try {
-      const postData = await roommateService.getPosts();
-      const requestData = await roommateService.getRequests();
+      const [postData, requestData, profileData] = await Promise.all([
+        roommateService.getPosts(),
+        roommateService.getRequests(),
+        profileService.getProfile(),
+      ]);
 
       setPosts(postData);
       setRequests(requestData);
+      setProfile(profileData);
+
+      console.log("PROFILE:", profileData);
+      console.log("PROFILE ID:", profileData?.id);
     } catch (err) {
-      console.error(err);
+      console.error("RoommatePage Load Error:", err);
     } finally {
       setLoading(false);
     }
@@ -45,8 +53,9 @@ export default function RoommatePage() {
       await loadData();
       navigateToList();
     } catch (err) {
-      console.error(err);
-      alert("Failed to create roommate post.");
+      console.error("Create Post Error:", err);
+      console.error("Server Response:", err.response?.data);
+      alert(err.response?.data?.message || "Failed to create roommate post.");
     }
   };
 
@@ -68,7 +77,7 @@ export default function RoommatePage() {
       await loadData();
     } catch (err) {
       console.error(err);
-      alert("Unable to send request.");
+      alert(err.response?.data?.message || "Unable to send request.");
     }
   };
 
@@ -78,7 +87,7 @@ export default function RoommatePage() {
       await loadData();
     } catch (err) {
       console.error(err);
-      alert("Unable to update request.");
+      alert(err.response?.data?.message || "Unable to update request.");
     }
   };
 
@@ -102,14 +111,22 @@ export default function RoommatePage() {
     );
   }
 
-  const profile = profileService.getProfile();
+  const pendingIncomingCount = requests.filter((req) => {
+    return (
+        Number(req.receiver?.id) === Number(profile?.id) &&
+        req.status?.toUpperCase() === "PENDING"
+    );
+  }).length;
 
-  const pendingIncomingCount = requests.filter(
-      (req) =>
-          req.receiver &&
-          req.receiver.email === profile?.email &&
-          req.status === "PENDING"
-  ).length;
+  const pendingOutgoingCount = requests.filter((req) => {
+    return (
+        Number(req.sender?.id) === Number(profile?.id) &&
+        req.status?.toUpperCase() === "PENDING"
+    );
+  }).length;
+
+  const totalPendingCount =
+      pendingIncomingCount + pendingOutgoingCount;
 
   return (
       <div className="roommate-page">
@@ -142,8 +159,10 @@ export default function RoommatePage() {
                     className="btn-secondary-action"
                 >
                   My Requests
-                  {pendingIncomingCount > 0 && (
-                      <span className="action-alert-dot"></span>
+                  {totalPendingCount > 0 && (
+                      <span className="action-alert-dot">
+        {totalPendingCount}
+      </span>
                   )}
                 </button>
             )}
