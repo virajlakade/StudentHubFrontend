@@ -1,101 +1,154 @@
 import React, { useState } from "react";
 import AuthLayout from "../../layouts/AuthLayout";
-import { useNavigation } from "../../context/NavigationContext";
 import authService from "../../services/authService";
+import { useNavigation } from "../../context/NavigationContext";
 
-export function VerifyEmailPage() {
-  const { setAuthView, emailToVerify } = useNavigation();
+export default function VerifyEmailPage() {
 
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
+  const {
+    emailToVerify,
+    setAuthView,
+  } = useNavigation();
+
+  const email = emailToVerify;
+
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const targetEmail = emailToVerify || "your student email";
-
-  const handleSubmit = async (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
 
-    if (code.length !== 6) {
-      setError("Please enter a valid 6-digit verification code.");
+    if (!email) {
+      setError("Email not found. Please register again.");
       return;
     }
 
-    setError("");
-    setLoading(true);
+    if (otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
 
     try {
-      // Temporary verification until backend API is implemented
-      if (code !== "123456") {
-        throw new Error("Invalid verification code.");
-      }
 
-      setSuccess(true);
+      setLoading(true);
+      setError("");
+      setSuccess("");
+
+      const response = await authService.verifyEmail(email, otp);
+
+      setSuccess(
+          response.message || "Email verified successfully!"
+      );
+
+      setTimeout(() => {
+        setAuthView("login");
+      }, 1500);
+
     } catch (err) {
-      setError(err.message || "Verification failed.");
+
+      setError(
+          err.response?.data?.message ||
+          err.message ||
+          "Verification failed."
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
-  if (success) {
-    return (
-        <AuthLayout>
-          <div className="auth-form">
-            <div className="auth-header-info">
-              <h2 className="auth-title">Email Verified!</h2>
-              <p className="auth-subtitle">
-                Your student account is now active.
-              </p>
-            </div>
+  const handleResend = async () => {
 
-            <div className="auth-success-banner">
-              ✨ Your email has been verified successfully.
-            </div>
+    if (!email) {
+      setError("Email not found.");
+      return;
+    }
 
-            <button
-                className="btn-auth-submit"
-                onClick={() => setAuthView("login")}
-                style={{ width: "100%" }}
-            >
-              Go to Login
-            </button>
-          </div>
-        </AuthLayout>
-    );
-  }
+    try {
+
+      setResending(true);
+      setError("");
+      setSuccess("");
+
+      const response = await authService.resendVerification(email);
+
+      setSuccess(
+          response.message || "Verification code sent successfully."
+      );
+
+    } catch (err) {
+
+      setError(
+          err.response?.data?.message ||
+          err.message ||
+          "Unable to resend verification code."
+      );
+
+    } finally {
+
+      setResending(false);
+
+    }
+  };
 
   return (
       <AuthLayout>
-        <form className="auth-form" onSubmit={handleSubmit}>
+
+        <form
+            className="auth-form"
+            onSubmit={handleVerify}
+        >
+
           <div className="auth-header-info">
-            <h2 className="auth-title">Verify Email</h2>
+            <h2 className="auth-title">
+              Verify Email
+            </h2>
+
             <p className="auth-subtitle">
               Enter the verification code sent to
               <br />
-              <strong>{targetEmail}</strong>
+              <strong>{email}</strong>
             </p>
           </div>
 
-          {error && <div className="auth-error-banner">{error}</div>}
+          {error && (
+              <div className="auth-error-banner">
+                {error}
+              </div>
+          )}
+
+          {success && (
+              <div className="auth-success-banner">
+                {success}
+              </div>
+          )}
 
           <div className="form-group">
-            <label htmlFor="code">Verification Code</label>
+            <label htmlFor="otp">
+              Verification Code
+            </label>
 
             <input
-                id="code"
+                id="otp"
                 type="text"
-                value={code}
+                value={otp}
                 maxLength={6}
+                placeholder="Enter 6-digit OTP"
                 disabled={loading}
-                placeholder="123456"
                 onChange={(e) => {
-                  setCode(e.target.value.replace(/\D/g, ""));
+                  setOtp(
+                      e.target.value.replace(/\D/g, "")
+                  );
                   setError("");
                 }}
                 style={{
                   textAlign: "center",
-                  letterSpacing: "8px",
+                  letterSpacing: "6px",
                   fontSize: "18px",
                 }}
                 required
@@ -111,22 +164,26 @@ export function VerifyEmailPage() {
           </button>
 
           <div className="auth-footer-prompt">
-            <span>Didn't receive the code?</span>
+
+          <span>
+            Didn't receive the code?
+          </span>
 
             <button
                 type="button"
                 className="auth-link"
-                disabled={loading}
-                onClick={() =>
-                    alert(`Verification code has been resent to ${targetEmail}`)
-                }
+                disabled={resending}
+                onClick={handleResend}
             >
-              Resend Code
+              {resending
+                  ? "Sending..."
+                  : "Resend Code"}
             </button>
+
           </div>
+
         </form>
+
       </AuthLayout>
   );
 }
-
-export default VerifyEmailPage;

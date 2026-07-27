@@ -31,7 +31,6 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
     (response) => response,
-
     (error) => {
       if (error.response?.status === 401) {
         localStorage.removeItem(TOKEN_KEY);
@@ -49,6 +48,8 @@ api.interceptors.response.use(
 // ================= PRIVATE METHODS =================
 
 const saveSession = (data) => {
+  if (!data.token) return;
+
   localStorage.setItem(TOKEN_KEY, data.token);
 
   localStorage.setItem(
@@ -92,7 +93,29 @@ const authService = {
       degreeProgram: user.degreeProgram || "",
     });
 
-    saveSession(response.data);
+    // Do NOT save session after registration.
+    // User must verify email first.
+
+    return response.data;
+  },
+
+  // ---------------- VERIFY EMAIL ----------------
+
+  async verifyEmail(email, otp) {
+    const response = await api.post("/api/auth/verify-email", {
+      email,
+      otp,
+    });
+
+    return response.data;
+  },
+
+  // ---------------- RESEND VERIFICATION OTP ----------------
+
+  async resendVerification(email) {
+    const response = await api.post("/api/auth/resend-verification", {
+      email,
+    });
 
     return response.data;
   },
@@ -111,10 +134,7 @@ const authService = {
     try {
       const response = await api.get("/api/users/me");
 
-      localStorage.setItem(
-          USER_KEY,
-          JSON.stringify(response.data)
-      );
+      localStorage.setItem(USER_KEY, JSON.stringify(response.data));
 
       return response.data;
     } catch (error) {
@@ -139,13 +159,11 @@ const authService = {
 
   async getUsers() {
     const response = await api.get("/api/users");
-
     return response.data;
   },
 
   async getUser(id) {
     const response = await api.get(`/api/users/${id}`);
-
     return response.data;
   },
 
@@ -163,10 +181,7 @@ const authService = {
         profile
     );
 
-    localStorage.setItem(
-        USER_KEY,
-        JSON.stringify(response.data)
-    );
+    localStorage.setItem(USER_KEY, JSON.stringify(response.data));
 
     return response.data;
   },
@@ -191,6 +206,7 @@ const authService = {
       window.location.href = "/login";
     }
   },
+
   // ---------------- FORGOT PASSWORD ----------------
 
   async forgotPassword(email) {
@@ -201,7 +217,7 @@ const authService = {
     return response.data;
   },
 
-// ---------------- VERIFY OTP ----------------
+  // ---------------- VERIFY RESET OTP ----------------
 
   async verifyOtp(email, otp) {
     const response = await api.post("/api/auth/verify-otp", {
@@ -212,7 +228,7 @@ const authService = {
     return response.data;
   },
 
-// ---------------- RESET PASSWORD ----------------
+  // ---------------- RESET PASSWORD ----------------
 
   async resetPassword(email, otp, newPassword) {
     const response = await api.post("/api/auth/reset-password", {

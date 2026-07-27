@@ -6,13 +6,18 @@ const BASE_URL = "http://localhost:8090";
 
 export default function LoginPage() {
 
-  const { login, setAuthView } = useNavigation();
+  const {
+    login,
+    setAuthView,
+    setEmailToVerify,
+  } = useNavigation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
 
   const handleSubmit = async (e) => {
 
@@ -20,6 +25,7 @@ export default function LoginPage() {
 
     setLoading(true);
     setError("");
+    setEmailNotVerified(false);
 
     try {
 
@@ -29,11 +35,20 @@ export default function LoginPage() {
 
       console.error(err);
 
-      setError(
+      const message =
           err.response?.data?.message ||
           err.response?.data ||
-          "Invalid email or password."
-      );
+          err.message ||
+          "Invalid email or password.";
+
+      setError(message);
+
+      if (
+          message.toLowerCase().includes("verify") &&
+          message.toLowerCase().includes("email")
+      ) {
+        setEmailNotVerified(true);
+      }
 
     } finally {
 
@@ -52,6 +67,14 @@ export default function LoginPage() {
         `${BASE_URL}/oauth2/authorization/github`;
   };
 
+  const goToVerifyEmail = () => {
+
+    setEmailToVerify(email);
+
+    setAuthView("verifyEmail");
+
+  };
+
   return (
       <div className="auth-page">
 
@@ -66,6 +89,19 @@ export default function LoginPage() {
           {error && (
               <div className="auth-error">
                 {error}
+              </div>
+          )}
+
+          {emailNotVerified && (
+              <div style={{ marginBottom: "15px" }}>
+                <button
+                    type="button"
+                    className="btn-auth-submit"
+                    onClick={goToVerifyEmail}
+                    style={{ width: "100%" }}
+                >
+                  Verify Email
+                </button>
               </div>
           )}
 

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import AuthLayout from "../../layouts/AuthLayout";
 import RegisterForm from "../../components/auth/RegisterForm";
-import { useNavigation } from "../../context/NavigationContext";
 import authService from "../../services/authService";
+import { useNavigation } from "../../context/NavigationContext";
 
 export default function RegisterPage() {
 
-  const { login } = useNavigation();
+  const {
+    setAuthView,
+    setEmailToVerify,
+  } = useNavigation();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +36,11 @@ export default function RegisterPage() {
         degreeProgram: "",
       });
 
-      await login(email, password);
+      // Save email for verification page
+      setEmailToVerify(email);
+
+      // Open Verify Email page
+      setAuthView("verifyEmail");
 
     } catch (err) {
 
@@ -54,13 +61,11 @@ export default function RegisterPage() {
 
   return (
       <AuthLayout>
-
         <RegisterForm
             onSubmit={handleRegisterSubmit}
             loading={loading}
             error={error}
         />
-
       </AuthLayout>
   );
 }
