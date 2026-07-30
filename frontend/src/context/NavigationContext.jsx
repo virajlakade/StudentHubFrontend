@@ -4,47 +4,31 @@ import authService from "../services/authService";
 const NavigationContext = createContext(null);
 
 export function NavigationProvider({ children }) {
-
-    // ================= NAVIGATION =================
-
+    // Navigation
     const [activeTab, setActiveTabState] = useState("Dashboard");
     const [subView, setSubView] = useState(null);
     const [selectedItemId, setSelectedItemId] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // ================= AUTH =================
-
+    // Authentication
     const [user, setUser] = useState(authService.getCurrentUser());
     const [authView, setAuthView] = useState("login");
     const [emailToVerify, setEmailToVerify] = useState("");
 
-    // Load user from backend if token exists
     useEffect(() => {
-
         const loadUser = async () => {
-
-            if (!authService.isAuthenticated()) {
-                return;
-            }
+            if (!authService.isAuthenticated()) return;
 
             try {
-
                 const profile = await authService.loadCurrentUser();
-
-                if (profile) {
-                    setUser(profile);
-                }
-
-            } catch (e) {
-                console.error(e);
+                if (profile) setUser(profile);
+            } catch (err) {
+                console.error(err);
             }
         };
 
         loadUser();
-
     }, []);
-
-    // ================= NAVIGATION =================
 
     const setActiveTab = (tab) => {
         setActiveTabState(tab);
@@ -67,37 +51,25 @@ export function NavigationProvider({ children }) {
         setSelectedItemId(null);
     };
 
-    // ================= LOGIN =================
-
     const login = async (email, password) => {
-
         await authService.login(email, password);
 
         const profile = await authService.loadCurrentUser();
 
         setUser(profile);
-
         setAuthView("none");
-
         setActiveTab("Dashboard");
 
         return profile;
     };
 
-    // ================= LOGOUT =================
-
     const logout = () => {
-
         authService.logout();
 
         setUser(null);
-
         setAuthView("login");
-
         setActiveTab("Dashboard");
-
         setSubView(null);
-
         setSelectedItemId(null);
     };
 
@@ -139,13 +111,10 @@ export function NavigationProvider({ children }) {
 }
 
 export function useNavigation() {
-
     const context = useContext(NavigationContext);
 
     if (!context) {
-        throw new Error(
-            "useNavigation must be used within NavigationProvider"
-        );
+        throw new Error("useNavigation must be used within NavigationProvider");
     }
 
     return context;

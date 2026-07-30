@@ -107,9 +107,10 @@ const authService = {
       otp,
     });
 
+    saveSession(response.data);
+
     return response.data;
   },
-
   // ---------------- RESEND VERIFICATION OTP ----------------
 
   async resendVerification(email) {

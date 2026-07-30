@@ -7,7 +7,9 @@ export default function VerifyEmailPage() {
 
   const {
     emailToVerify,
+    setUser,
     setAuthView,
+    setActiveTab,
   } = useNavigation();
 
   const email = emailToVerify;
@@ -32,7 +34,6 @@ export default function VerifyEmailPage() {
     }
 
     try {
-
       setLoading(true);
       setError("");
       setSuccess("");
@@ -43,9 +44,21 @@ export default function VerifyEmailPage() {
           response.message || "Email verified successfully!"
       );
 
-      setTimeout(() => {
-        setAuthView("login");
-      }, 1500);
+      // Backend already returns id, fullName, email, role
+      // on verify-email, so we can use it directly
+      // instead of making a second /api/users/me call.
+      setUser({
+        id: response.id,
+        fullName: response.fullName,
+        email: response.email,
+        role: response.role,
+      });
+
+      // Hide auth pages
+      setAuthView("none");
+
+      // Open Dashboard
+      setActiveTab("Dashboard");
 
     } catch (err) {
 
@@ -105,6 +118,7 @@ export default function VerifyEmailPage() {
         >
 
           <div className="auth-header-info">
+
             <h2 className="auth-title">
               Verify Email
             </h2>
@@ -114,6 +128,7 @@ export default function VerifyEmailPage() {
               <br />
               <strong>{email}</strong>
             </p>
+
           </div>
 
           {error && (
@@ -129,6 +144,7 @@ export default function VerifyEmailPage() {
           )}
 
           <div className="form-group">
+
             <label htmlFor="otp">
               Verification Code
             </label>
@@ -141,9 +157,7 @@ export default function VerifyEmailPage() {
                 placeholder="Enter 6-digit OTP"
                 disabled={loading}
                 onChange={(e) => {
-                  setOtp(
-                      e.target.value.replace(/\D/g, "")
-                  );
+                  setOtp(e.target.value.replace(/\D/g, ""));
                   setError("");
                 }}
                 style={{
@@ -153,6 +167,7 @@ export default function VerifyEmailPage() {
                 }}
                 required
             />
+
           </div>
 
           <button
@@ -165,9 +180,7 @@ export default function VerifyEmailPage() {
 
           <div className="auth-footer-prompt">
 
-          <span>
-            Didn't receive the code?
-          </span>
+            <span>Didn't receive the code?</span>
 
             <button
                 type="button"
@@ -175,9 +188,7 @@ export default function VerifyEmailPage() {
                 disabled={resending}
                 onClick={handleResend}
             >
-              {resending
-                  ? "Sending..."
-                  : "Resend Code"}
+              {resending ? "Sending..." : "Resend Code"}
             </button>
 
           </div>
