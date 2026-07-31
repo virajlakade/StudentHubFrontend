@@ -38,8 +38,6 @@ export default function RoommatePage() {
       setRequests(requestData);
       setProfile(profileData);
 
-      console.log("PROFILE:", profileData);
-      console.log("PROFILE ID:", profileData?.id);
     } catch (err) {
       console.error("RoommatePage Load Error:", err);
     } finally {
@@ -53,8 +51,7 @@ export default function RoommatePage() {
       await loadData();
       navigateToList();
     } catch (err) {
-      console.error("Create Post Error:", err);
-      console.error("Server Response:", err.response?.data);
+      console.error(err);
       alert(err.response?.data?.message || "Failed to create roommate post.");
     }
   };
@@ -111,26 +108,23 @@ export default function RoommatePage() {
     );
   }
 
-  const pendingIncomingCount = requests.filter((req) => {
-    return (
-        Number(req.receiver?.id) === Number(profile?.id) &&
-        req.status?.toUpperCase() === "PENDING"
-    );
-  }).length;
+  const pendingIncomingCount = requests.filter((req) => (
+      Number(req.receiver?.id) === Number(profile?.id) &&
+      req.status?.toUpperCase() === "PENDING"
+  )).length;
 
-  const pendingOutgoingCount = requests.filter((req) => {
-    return (
-        Number(req.sender?.id) === Number(profile?.id) &&
-        req.status?.toUpperCase() === "PENDING"
-    );
-  }).length;
+  const pendingOutgoingCount = requests.filter((req) => (
+      Number(req.sender?.id) === Number(profile?.id) &&
+      req.status?.toUpperCase() === "PENDING"
+  )).length;
 
-  const totalPendingCount =
-      pendingIncomingCount + pendingOutgoingCount;
+  const totalPendingCount = pendingIncomingCount + pendingOutgoingCount;
 
   return (
       <div className="roommate-page">
+
         <div className="roommate-header">
+
           <div className="header-text-container">
             <h1 className="page-title">
               {subView === "requests"
@@ -146,6 +140,7 @@ export default function RoommatePage() {
           </div>
 
           <div className="header-actions">
+
             {subView === "requests" ? (
                 <button
                     onClick={navigateToList}
@@ -161,8 +156,8 @@ export default function RoommatePage() {
                   My Requests
                   {totalPendingCount > 0 && (
                       <span className="action-alert-dot">
-        {totalPendingCount}
-      </span>
+                  {totalPendingCount}
+                </span>
                   )}
                 </button>
             )}
@@ -173,7 +168,9 @@ export default function RoommatePage() {
             >
               Post Requirement
             </button>
+
           </div>
+
         </div>
 
         <RoommateStats
@@ -191,11 +188,13 @@ export default function RoommatePage() {
               <RoommateList
                   posts={posts}
                   requests={requests}
+                  currentUserId={profile?.id}
                   onConnect={handleConnectRequest}
                   onDelete={handleDeletePost}
               />
           )}
         </div>
+
       </div>
   );
 }

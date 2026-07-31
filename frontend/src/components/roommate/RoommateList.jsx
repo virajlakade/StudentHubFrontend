@@ -3,40 +3,50 @@ import RoommateCard from "./RoommateCard";
 import "./RoommateList.css";
 
 export function RoommateList({
-  posts = [],
-  requests = [],
-  onConnect,
-  onDelete
-}) {
+                               posts = [],
+                               requests = [],
+                               currentUserId,
+                               onConnect,
+                               onDelete,
+                             }) {
   if (posts.length === 0) {
     return (
-      <div className="roommate-list-empty glass-card">
-        <div className="empty-icon-container">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
+        <div className="roommate-list-empty glass-card">
+          <div className="empty-icon-container">
+            <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+
+          <h3>No roommates found</h3>
+          <p>There are no active roommate requirement listings posted yet.</p>
         </div>
-        <h3>No roommates found</h3>
-        <p>There are no active roommate requirements listings posted yet.</p>
-      </div>
     );
   }
 
   return (
-    <div className="roommate-cards-grid">
-      {posts.map((post) => (
-        <RoommateCard
-          key={post.id}
-          post={post}
-          requests={requests}
-          onConnect={onConnect}
-          onDelete={onDelete}
-        />
-      ))}
-    </div>
+      <div className="roommate-cards-grid">
+        {posts.map((post) => (
+            <RoommateCard
+                key={post.id}
+                post={post}
+                requests={requests}
+                currentUserId={currentUserId}
+                onConnect={onConnect}
+                onDelete={onDelete}
+            />
+        ))}
+      </div>
   );
 }
 
