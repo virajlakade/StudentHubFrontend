@@ -69,14 +69,22 @@ const authService = {
   // ---------------- LOGIN ----------------
 
   async login(email, password) {
-    const response = await api.post("/api/auth/login", {
-      email,
-      password,
-    });
+    try {
+      const response = await api.post("/api/auth/login", {
+        email,
+        password,
+      });
 
-    saveSession(response.data);
+      saveSession(response.data);
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      throw new Error(
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Login failed."
+      );
+    }
   },
 
   // ---------------- REGISTER ----------------
