@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8090";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const TOKEN_KEY = "studenthub_token";
 export const USER_KEY = "studenthub_user";
