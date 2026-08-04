@@ -2,6 +2,8 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+console.log("BASE_URL =", BASE_URL);
+
 export const TOKEN_KEY = "studenthub_token";
 export const USER_KEY = "studenthub_user";
 
